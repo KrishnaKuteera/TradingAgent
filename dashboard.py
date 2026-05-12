@@ -107,7 +107,16 @@ def fetch_users_from_sheet():
 
         # Build user list
         for row in all_values[1:]:
-            if len(row) > 1 and row[0].strip():  # Skip empty rows, need at least username and password
+            # Skip empty rows
+            if not row or not row[0].strip():
+                continue
+
+            # Check if row has enough columns for required fields
+            max_required_idx = max(col_indices[col] for col in required_cols)
+            if len(row) <= max_required_idx:
+                continue
+
+            try:
                 user_data = {
                     'username': row[col_indices['username']].strip(),
                     'password': row[col_indices['password']].strip(),
@@ -117,6 +126,8 @@ def fetch_users_from_sheet():
                 if 'name' in col_indices and len(row) > col_indices['name']:
                     user_data['name'] = row[col_indices['name']].strip()
                 users.append(user_data)
+            except (IndexError, AttributeError):
+                continue
 
         if not users:
             st.error("❌ No users found in Auth tab")
