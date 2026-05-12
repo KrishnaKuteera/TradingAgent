@@ -408,6 +408,67 @@ def analyze_stocks(tickers):
     status_text.empty()
     return results
 
+# Calculate price changes for various time periods
+def calculate_price_changes(tickers):
+    """Calculate price percentage changes for 1D, 5D, 1M, 3M, 6M, 1Y, YTD"""
+    price_data = []
+    end_date = datetime.now(pytz.timezone('America/Toronto')).date()
+
+    for ticker in tickers:
+        try:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(period="1y")
+
+            if len(hist) == 0:
+                continue
+
+            current_price = hist['Close'].iloc[-1]
+
+            # Calculate returns for each period
+            changes = {'Ticker': ticker, 'Current': f"${current_price:.2f}"}
+
+            # 1 Day
+            if len(hist) >= 1:
+                price_1d_ago = hist['Close'].iloc[-2] if len(hist) > 1 else hist['Close'].iloc[-1]
+                changes['1D'] = ((current_price - price_1d_ago) / price_1d_ago) * 100
+
+            # 5 Days
+            if len(hist) >= 5:
+                price_5d_ago = hist['Close'].iloc[-5]
+                changes['5D'] = ((current_price - price_5d_ago) / price_5d_ago) * 100
+
+            # 1 Month
+            if len(hist) >= 21:
+                price_1m_ago = hist['Close'].iloc[-21]
+                changes['1M'] = ((current_price - price_1m_ago) / price_1m_ago) * 100
+
+            # 3 Months
+            if len(hist) >= 63:
+                price_3m_ago = hist['Close'].iloc[-63]
+                changes['3M'] = ((current_price - price_3m_ago) / price_3m_ago) * 100
+
+            # 6 Months
+            if len(hist) >= 126:
+                price_6m_ago = hist['Close'].iloc[-126]
+                changes['6M'] = ((current_price - price_6m_ago) / price_6m_ago) * 100
+
+            # 1 Year
+            if len(hist) >= 252:
+                price_1y_ago = hist['Close'].iloc[-252]
+                changes['1Y'] = ((current_price - price_1y_ago) / price_1y_ago) * 100
+
+            # YTD (Year to Date)
+            year_start = hist[hist.index.year == end_date.year]
+            if len(year_start) > 0:
+                price_ytd = year_start['Close'].iloc[0]
+                changes['YTD'] = ((current_price - price_ytd) / price_ytd) * 100
+
+            price_data.append(changes)
+        except:
+            continue
+
+    return pd.DataFrame(price_data)
+
 # Display CANSLIM badges for each stock
 def display_canslim_badges(df):
     """Display CANSLIM indicators as a table"""
@@ -612,7 +673,7 @@ else:
         st.divider()
 
         # Additional Analysis Tabs
-        tab_canslim, tab_sectors = st.tabs(["📊 CANSLIM Analysis", "🏭 Sectors & Industries"])
+        tab_canslim, tab_sectors, tab_performance = st.tabs(["📊 CANSLIM Analysis", "🏭 Sectors & Industries", "📈 Price Performance"])
 
         with tab_canslim:
             st.subheader("CANSLIM Breakdown - Stock Screening Indicators")
@@ -634,6 +695,34 @@ else:
             st.markdown("Stocks grouped by industry classification from Yahoo Finance:")
             _, sectors, sub_sectors, descriptions = fetch_tickers_with_sectors()
             display_sector_subsector_breakdown(df, sectors, sub_sectors, descriptions)
+
+        with tab_performance:
+            st.subheader("Price Performance (% Change)")
+            st.markdown("Stock price percentage changes over various time periods")
+
+            tickers_list = df['Ticker'].tolist()
+            perf_df = calculate_price_changes(tickers_list)
+
+            if len(perf_df) > 0:
+                # Format percentage columns with color
+                for col in ['1D', '5D', '1M', '3M', '6M', '1Y', 'YTD']:
+                    if col in perf_df.columns:
+                        perf_df[col] = perf_df[col].apply(lambda x: f"{x:+.2f}%" if pd.notna(x) else "N/A")
+
+                st.dataframe(perf_df, use_container_width=True, hide_index=True,
+                           column_config={
+                               "Ticker": st.column_config.TextColumn(width="small"),
+                               "Current": st.column_config.TextColumn(width="small"),
+                               "1D": st.column_config.TextColumn(width="small"),
+                               "5D": st.column_config.TextColumn(width="small"),
+                               "1M": st.column_config.TextColumn(width="small"),
+                               "3M": st.column_config.TextColumn(width="small"),
+                               "6M": st.column_config.TextColumn(width="small"),
+                               "1Y": st.column_config.TextColumn(width="small"),
+                               "YTD": st.column_config.TextColumn(width="small"),
+                           })
+            else:
+                st.warning("Unable to fetch price performance data")
 
         st.divider()
 
