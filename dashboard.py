@@ -5,7 +5,9 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
-import plotly.express as px
+import json
+import os
+import bcrypt
 
 # Page configuration
 st.set_page_config(
@@ -30,61 +32,158 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Title and description
-st.title("📈 Stock Buy Zone Analyzer")
-st.markdown("""
-Analyze your stock portfolio to identify **buy zone opportunities**:
-- Stocks within **3% of 50-day moving average** (support levels)
-- Stocks with **tight price ranges** (VCP consolidation patterns)
-""")
-
-# Sidebar configuration
-st.sidebar.header("⚙️ Configuration")
-refresh_button = st.sidebar.button("🔄 Run Analysis", use_container_width=True)
+# Initialize session state for authentication
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+if 'username' not in st.session_state:
+    st.session_state.username = None
 
 # Cache function for Google Sheets authentication
 @st.cache_resource
 def get_gspread_client():
-    import json
     import os
-
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
     try:
-        # Try to use Streamlit secrets (for cloud deployment)
-        if "gcp_service_account" in st.secrets:
+        json_file = 'tradeportfolioagent-52f42fe31773.json'
+
+        # Try local JSON file first (for local development)
+        if os.path.exists(json_file):
+            credentials = Credentials.from_service_account_file(json_file, scopes=SCOPES)
+        # Fall back to Streamlit secrets (for cloud deployment)
+        elif "gcp_service_account" in st.secrets:
             creds_dict = st.secrets["gcp_service_account"]
             credentials = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
         else:
-            # Fall back to local JSON file (for local development)
-            json_file = 'tradeportfolioagent-52f42fe31773.json'
-            if os.path.exists(json_file):
-                credentials = Credentials.from_service_account_file(json_file, scopes=SCOPES)
-            else:
-                st.error("❌ Service account credentials not found. Please add them to Streamlit Secrets.")
-                st.stop()
+            st.error("❌ Service account credentials not found. Please ensure tradeportfolioagent-52f42fe31773.json exists in this directory.")
+            st.stop()
     except Exception as e:
         st.error(f"❌ Authentication error: {str(e)}")
         st.stop()
 
     return gspread.authorize(credentials)
 
-# Cache function for fetching tickers
-@st.cache_data(ttl=3600)
-def fetch_tickers():
+# Cache users for 5 minutes
+@st.cache_data(ttl=300)
+def fetch_users_from_sheet():
+    """Fetch user credentials from 'Auth' tab in Google Sheet"""
     try:
         client = get_gspread_client()
         spreadsheet = client.open('Copy of StockTracker')
-        worksheet = spreadsheet.sheet1
+
+        # Try to get the 'Auth' worksheet
+        try:
+            auth_sheet = spreadsheet.worksheet('Auth')
+        except:
+            st.error("❌ 'Auth' tab not found in Google Sheet. Please create it with columns: username, password, email, name")
+            st.stop()
+
+        # Get all values from Auth sheet
+        all_values = auth_sheet.get_all_values()
+
+        if len(all_values) < 2:
+            st.error("❌ 'Auth' tab is empty. Add users with: username, password, email, name")
+            st.stop()
+
+        # Parse header and users
+        headers = all_values[0]
+        users = []
+
+        required_cols = ['username', 'password', 'email', 'name']
+        header_lower = [h.lower().strip() for h in headers]
+
+        # Check if all required columns exist
+        for col in required_cols:
+            if col not in header_lower:
+                st.error(f"❌ Missing required column in Auth tab: '{col}'")
+                st.stop()
+
+        # Get column indices
+        col_indices = {col: header_lower.index(col) for col in required_cols}
+
+        # Build user list
+        for row in all_values[1:]:
+            if len(row) > max(col_indices.values()) and row[0].strip():  # Skip empty rows
+                users.append({
+                    'username': row[col_indices['username']].strip(),
+                    'password': row[col_indices['password']].strip(),
+                    'email': row[col_indices['email']].strip(),
+                    'name': row[col_indices['name']].strip()
+                })
+
+        if not users:
+            st.error("❌ No users found in Auth tab")
+            st.stop()
+
+        return users
+
+    except Exception as e:
+        st.error(f"❌ Error fetching users: {str(e)}")
+        st.stop()
+
+# Validate password (supports both plain text and bcrypt hashes)
+def validate_password(stored_password, provided_password):
+    """Validate password against stored hash or plain text"""
+    try:
+        # Check if stored password is a bcrypt hash (starts with $2)
+        if stored_password.startswith('$2'):
+            return bcrypt.checkpw(
+                provided_password.encode('utf-8'),
+                stored_password.encode('utf-8')
+            )
+        else:
+            # Fall back to plain text comparison (for initial setup)
+            return stored_password == provided_password
+    except:
+        return False
+
+# Login function
+def login(users, username, password):
+    """Authenticate user against user list"""
+    username_lower = username.lower().strip()
+    for user in users:
+        if user['username'].lower().strip() == username_lower:
+            if validate_password(user['password'], password):
+                st.session_state.authenticated = True
+                st.session_state.username = username
+                st.session_state.user_email = user['email']
+                st.session_state.user_name = user['name']
+                return True
+    return False
+
+# Logout function
+def logout():
+    """Logout user"""
+    st.session_state.authenticated = False
+    st.session_state.username = None
+    st.session_state.user_email = None
+    st.session_state.user_name = None
+
+# Fetch tickers from Tickers tab
+@st.cache_data(ttl=300)
+def fetch_tickers():
+    """Fetch tickers from 'Tickers' tab (caching for 5 min)"""
+    try:
+        client = get_gspread_client()
+        spreadsheet = client.open('Copy of StockTracker')
+
+        # Try to get the 'Tickers' worksheet
+        try:
+            worksheet = spreadsheet.worksheet('Tickers')
+        except:
+            # Fall back to sheet1 if 'Tickers' tab doesn't exist
+            worksheet = spreadsheet.sheet1
+
         all_values = worksheet.get_all_values()
         tickers = [row[0].strip().upper() for row in all_values[1:] if row and row[0].strip()]
         return tickers
     except Exception as e:
-        st.error(f"Error fetching tickers from Google Sheets: {str(e)}")
+        st.error(f"Error fetching tickers: {str(e)}")
         return []
 
-# Function to analyze stocks
+# Analyze stocks
 def analyze_stocks(tickers):
+    """Analyze stocks for buy zone signals"""
     results = []
     progress_bar = st.progress(0)
     status_text = st.empty()
@@ -114,7 +213,6 @@ def analyze_stocks(tickers):
             current_price = data['Close'].iloc[-1].item() if hasattr(data['Close'].iloc[-1], 'item') else float(data['Close'].iloc[-1])
             sma_50 = data['Close'].tail(50).mean().item() if hasattr(data['Close'].tail(50).mean(), 'item') else float(data['Close'].tail(50).mean())
 
-            # Calculate price range metrics
             high_52w = data['High'].tail(252).max().item() if hasattr(data['High'].tail(252).max(), 'item') else float(data['High'].tail(252).max())
             low_52w = data['Low'].tail(252).min().item() if hasattr(data['Low'].tail(252).min(), 'item') else float(data['Low'].tail(252).min())
             recent_high = data['High'].tail(20).max().item() if hasattr(data['High'].tail(20).max(), 'item') else float(data['High'].tail(20).max())
@@ -165,207 +263,246 @@ def analyze_stocks(tickers):
     status_text.empty()
     return results
 
-# Main logic
-if refresh_button or 'analysis_results' not in st.session_state:
-    tickers = fetch_tickers()
+# ============= AUTHENTICATION UI =============
+if not st.session_state.authenticated:
+    st.title("🔐 Stock Buy Zone Analyzer - Login")
 
-    if tickers:
-        st.info(f"📊 Found {len(tickers)} tickers to analyze")
-        results = analyze_stocks(tickers)
-        st.session_state.analysis_results = results
-        st.session_state.last_update = datetime.now()
-    else:
-        st.error("Could not fetch tickers from Google Sheets")
-        st.stop()
-
-# Display results
-if 'analysis_results' in st.session_state:
-    results = st.session_state.analysis_results
-    df = pd.DataFrame(results)
-
-    # Filter buy zone stocks
-    buy_zone_stocks = df[df['Buy Zone'] == True].copy()
-    no_signal_stocks = df[df['Buy Zone'] == False].copy()
-
-    # Metrics
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>✅ Buy Zone Stocks</h3>
-            <h1>{len(buy_zone_stocks)}</h1>
-            <p>out of {len(df)} total</p>
-        </div>
-        """, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>📍 3% of 50-DMA</h3>
-            <h1>{len(df[df['Signal'].str.contains('Within 3%', na=False)])}</h1>
-            <p>Support levels</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("### Enter your credentials")
 
-    with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>📦 VCP Patterns</h3>
-            <h1>{len(df[df['Signal'].str.contains('Tight Range', na=False)])}</h1>
-            <p>Consolidations</p>
-        </div>
-        """, unsafe_allow_html=True)
+        username = st.text_input("Username", key="login_username")
+        password = st.text_input("Password", type="password", key="login_password")
 
-    with col4:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>⏰ Last Update</h3>
-            <p>{st.session_state.last_update.strftime('%I:%M %p')}</p>
-            <p>{st.session_state.last_update.strftime('%m/%d/%Y')}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        if st.button("🔓 Login", use_container_width=True, type="primary"):
+            # Fetch users (cached for 1 hour)
+            users = fetch_users_from_sheet()
 
-    st.divider()
+            if login(users, username, password):
+                st.success(f"✅ Welcome, {st.session_state.user_name}!")
+                st.rerun()
+            else:
+                st.error("❌ Invalid username or password")
 
-    # Buy Zone Stocks Section
-    if len(buy_zone_stocks) > 0:
-        st.subheader("🎯 Buy Zone Stocks (Action Zone)")
+        st.divider()
+        st.info("💡 Contact the administrator to request access")
 
-        buy_zone_display = buy_zone_stocks[['Ticker', 'Status', 'Current Price', '50-DMA', 'Distance from 50-DMA', 'Range Compression', 'Signal']].copy()
-        buy_zone_display = buy_zone_display.rename(columns={
-            'Status': '',
-            'Range Compression': 'Compression'
-        })
+else:
+    # ============= MAIN TRADING DASHBOARD (ONLY IF AUTHENTICATED) =============
 
-        st.dataframe(
-            buy_zone_display,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Ticker": st.column_config.TextColumn(width="small"),
-                "": st.column_config.TextColumn(width="small"),
-                "Current Price": st.column_config.TextColumn(width="medium"),
-                "50-DMA": st.column_config.TextColumn(width="medium"),
-                "Distance from 50-DMA": st.column_config.TextColumn(width="medium"),
-                "Compression": st.column_config.TextColumn(width="small"),
-                "Signal": st.column_config.TextColumn(width="large"),
-            }
-        )
+    # Sidebar with user info and logout
+    st.sidebar.markdown(f"### 👤 {st.session_state.user_name}")
+    st.sidebar.markdown(f"*{st.session_state.user_email}*")
 
-        # Charts for buy zone stocks
-        col1, col2 = st.columns(2)
+    if st.sidebar.button("🚪 Logout", use_container_width=True):
+        logout()
+        st.rerun()
 
-        with col1:
-            # Distance from 50-DMA chart
-            buy_zone_chart = buy_zone_stocks.sort_values('Distance_Value', ascending=True)
-            fig = go.Figure(data=[
-                go.Bar(
-                    x=buy_zone_chart['Ticker'],
-                    y=buy_zone_chart['Distance_Value'],
-                    marker=dict(
-                        color=buy_zone_chart['Distance_Value'],
-                        colorscale='RdYlGn_r',
-                        cmin=-3,
-                        cmax=3,
-                        showscale=False
-                    ),
-                    text=buy_zone_chart['Distance_Value'].apply(lambda x: f"{x:+.2f}%"),
-                    textposition='auto'
-                )
-            ])
-            fig.update_layout(
-                title="Distance from 50-DMA (Buy Zone)",
-                xaxis_title="Ticker",
-                yaxis_title="Distance (%)",
-                height=400,
-                showlegend=False,
-                hovermode='x unified'
-            )
-            fig.add_hline(y=3, line_dash="dash", line_color="red", annotation_text="3% threshold", annotation_position="right")
-            fig.add_hline(y=-3, line_dash="dash", line_color="red", annotation_text="-3% threshold", annotation_position="right")
-            st.plotly_chart(fig, use_container_width=True)
+    st.sidebar.divider()
+    st.sidebar.header("⚙️ Configuration")
+    refresh_button = st.sidebar.button("🔄 Run Analysis", use_container_width=True)
 
-        with col2:
-            # Range compression chart
-            fig2 = go.Figure(data=[
-                go.Bar(
-                    x=buy_zone_stocks['Ticker'],
-                    y=buy_zone_stocks['Range_Value'],
-                    marker=dict(color='#1f77b4'),
-                    text=buy_zone_stocks['Range_Value'].apply(lambda x: f"{x:.1f}%"),
-                    textposition='auto'
-                )
-            ])
-            fig2.update_layout(
-                title="Range Compression (Buy Zone)",
-                xaxis_title="Ticker",
-                yaxis_title="Compression (%)",
-                height=400,
-                showlegend=False,
-                hovermode='x unified'
-            )
-            fig2.add_hline(y=30, line_dash="dash", line_color="orange", annotation_text="VCP threshold", annotation_position="right")
-            st.plotly_chart(fig2, use_container_width=True)
+    st.title("📈 Stock Buy Zone Analyzer")
+    st.markdown("""
+    Analyze your stock portfolio to identify **buy zone opportunities**:
+    - Stocks within **3% of 50-day moving average** (support levels)
+    - Stocks with **tight price ranges** (VCP consolidation patterns)
+    """)
 
-    else:
-        st.info("No stocks currently in buy zone. Check back later!")
+    # Analysis logic
+    if refresh_button or 'analysis_results' not in st.session_state:
+        tickers = fetch_tickers()
 
-    st.divider()
+        if tickers:
+            st.info(f"📊 Found {len(tickers)} tickers to analyze")
+            results = analyze_stocks(tickers)
+            st.session_state.analysis_results = results
+            st.session_state.last_update = datetime.now()
+        else:
+            st.error("Could not fetch tickers from Google Sheets")
+            st.stop()
 
-    # All stocks with filtering
-    with st.expander("📊 View All Stocks", expanded=False):
-        st.subheader("All Stocks Analysis")
+    # Display results
+    if 'analysis_results' in st.session_state:
+        results = st.session_state.analysis_results
+        df = pd.DataFrame(results)
 
-        # Filter options
-        col1, col2, col3 = st.columns(3)
+        # Filter buy zone stocks
+        buy_zone_stocks = df[df['Buy Zone'] == True].copy()
+        no_signal_stocks = df[df['Buy Zone'] == False].copy()
+
+        # Metrics
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            show_buy_zone = st.checkbox("Buy Zone Only", value=False)
+            st.markdown(f"""
+            <div class="metric-card">
+                <h3>✅ Buy Zone Stocks</h3>
+                <h1>{len(buy_zone_stocks)}</h1>
+                <p>out of {len(df)} total</p>
+            </div>
+            """, unsafe_allow_html=True)
 
         with col2:
-            sort_by = st.selectbox("Sort by", ["Ticker", "Distance from 50-DMA", "Range Compression"])
+            st.markdown(f"""
+            <div class="metric-card">
+                <h3>📍 3% of 50-DMA</h3>
+                <h1>{len(df[df['Signal'].str.contains('Within 3%', na=False)])}</h1>
+                <p>Support levels</p>
+            </div>
+            """, unsafe_allow_html=True)
 
         with col3:
-            search = st.text_input("Search ticker", "")
+            st.markdown(f"""
+            <div class="metric-card">
+                <h3>📦 VCP Patterns</h3>
+                <h1>{len(df[df['Signal'].str.contains('Tight Range', na=False)])}</h1>
+                <p>Consolidations</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-        # Filter and display
-        display_df = df.copy()
+        with col4:
+            st.markdown(f"""
+            <div class="metric-card">
+                <h3>⏰ Last Update</h3>
+                <p>{st.session_state.last_update.strftime('%I:%M %p')}</p>
+                <p>{st.session_state.last_update.strftime('%m/%d/%Y')}</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-        if show_buy_zone:
-            display_df = display_df[display_df['Buy Zone'] == True]
+        st.divider()
 
-        if search:
-            display_df = display_df[display_df['Ticker'].str.contains(search.upper())]
+        # Buy Zone Stocks Section
+        if len(buy_zone_stocks) > 0:
+            st.subheader("🎯 Buy Zone Stocks (Action Zone)")
 
-        # Sort
-        if sort_by == "Distance from 50-DMA":
-            display_df = display_df.sort_values('Distance_Value', ascending=True)
-        elif sort_by == "Range Compression":
-            display_df = display_df.sort_values('Range_Value', ascending=True)
+            buy_zone_display = buy_zone_stocks[['Ticker', 'Status', 'Current Price', '50-DMA', 'Distance from 50-DMA', 'Range Compression', 'Signal']].copy()
+            buy_zone_display = buy_zone_display.rename(columns={
+                'Status': '',
+                'Range Compression': 'Compression'
+            })
+
+            st.dataframe(
+                buy_zone_display,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Ticker": st.column_config.TextColumn(width="small"),
+                    "": st.column_config.TextColumn(width="small"),
+                    "Current Price": st.column_config.TextColumn(width="medium"),
+                    "50-DMA": st.column_config.TextColumn(width="medium"),
+                    "Distance from 50-DMA": st.column_config.TextColumn(width="medium"),
+                    "Compression": st.column_config.TextColumn(width="small"),
+                    "Signal": st.column_config.TextColumn(width="large"),
+                }
+            )
+
+            # Charts for buy zone stocks
+            col1, col2 = st.columns(2)
+
+            with col1:
+                buy_zone_chart = buy_zone_stocks.sort_values('Distance_Value', ascending=True)
+                fig = go.Figure(data=[
+                    go.Bar(
+                        x=buy_zone_chart['Ticker'],
+                        y=buy_zone_chart['Distance_Value'],
+                        marker=dict(
+                            color=buy_zone_chart['Distance_Value'],
+                            colorscale='RdYlGn_r',
+                            cmin=-3,
+                            cmax=3,
+                            showscale=False
+                        ),
+                        text=buy_zone_chart['Distance_Value'].apply(lambda x: f"{x:+.2f}%"),
+                        textposition='auto'
+                    )
+                ])
+                fig.update_layout(
+                    title="Distance from 50-DMA (Buy Zone)",
+                    xaxis_title="Ticker",
+                    yaxis_title="Distance (%)",
+                    height=400,
+                    showlegend=False,
+                    hovermode='x unified'
+                )
+                fig.add_hline(y=3, line_dash="dash", line_color="red", annotation_text="3% threshold", annotation_position="right")
+                fig.add_hline(y=-3, line_dash="dash", line_color="red", annotation_text="-3% threshold", annotation_position="right")
+                st.plotly_chart(fig, use_container_width=True)
+
+            with col2:
+                fig2 = go.Figure(data=[
+                    go.Bar(
+                        x=buy_zone_stocks['Ticker'],
+                        y=buy_zone_stocks['Range_Value'],
+                        marker=dict(color='#1f77b4'),
+                        text=buy_zone_stocks['Range_Value'].apply(lambda x: f"{x:.1f}%"),
+                        textposition='auto'
+                    )
+                ])
+                fig2.update_layout(
+                    title="Range Compression (Buy Zone)",
+                    xaxis_title="Ticker",
+                    yaxis_title="Compression (%)",
+                    height=400,
+                    showlegend=False,
+                    hovermode='x unified'
+                )
+                fig2.add_hline(y=30, line_dash="dash", line_color="orange", annotation_text="VCP threshold", annotation_position="right")
+                st.plotly_chart(fig2, use_container_width=True)
+
         else:
-            display_df = display_df.sort_values('Ticker')
+            st.info("No stocks currently in buy zone. Check back later!")
 
-        display_cols = display_df[['Ticker', 'Status', 'Current Price', '50-DMA', 'Distance from 50-DMA', 'Range Compression', 'Signal']]
-        display_cols = display_cols.rename(columns={'Status': '', 'Range Compression': 'Compression'})
+        st.divider()
 
-        st.dataframe(display_cols, use_container_width=True, hide_index=True)
+        # All stocks with filtering
+        with st.expander("📊 View All Stocks", expanded=False):
+            st.subheader("All Stocks Analysis")
 
-        # Download data
-        csv = display_df.to_csv(index=False)
-        st.download_button(
-            label="📥 Download CSV",
-            data=csv,
-            file_name=f"stock_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv"
-        )
+            col1, col2, col3 = st.columns(3)
 
-# Footer
-st.divider()
-st.markdown("""
-<div style="text-align: center; color: #666; font-size: 12px; margin-top: 2rem;">
-    <p>📈 Stock Buy Zone Analyzer | Last Update: {}</p>
-    <p>Data from Yahoo Finance | Google Sheets Integration</p>
-</div>
-""".format(st.session_state.get('last_update', 'Never').strftime('%Y-%m-%d %H:%M:%S') if 'last_update' in st.session_state else 'Never'),
-unsafe_allow_html=True)
+            with col1:
+                show_buy_zone = st.checkbox("Buy Zone Only", value=False)
+
+            with col2:
+                sort_by = st.selectbox("Sort by", ["Ticker", "Distance from 50-DMA", "Range Compression"])
+
+            with col3:
+                search = st.text_input("Search ticker", "")
+
+            display_df = df.copy()
+
+            if show_buy_zone:
+                display_df = display_df[display_df['Buy Zone'] == True]
+
+            if search:
+                display_df = display_df[display_df['Ticker'].str.contains(search.upper())]
+
+            if sort_by == "Distance from 50-DMA":
+                display_df = display_df.sort_values('Distance_Value', ascending=True)
+            elif sort_by == "Range Compression":
+                display_df = display_df.sort_values('Range_Value', ascending=True)
+            else:
+                display_df = display_df.sort_values('Ticker')
+
+            display_cols = display_df[['Ticker', 'Status', 'Current Price', '50-DMA', 'Distance from 50-DMA', 'Range Compression', 'Signal']]
+            display_cols = display_cols.rename(columns={'Status': '', 'Range Compression': 'Compression'})
+
+            st.dataframe(display_cols, use_container_width=True, hide_index=True)
+
+            csv = display_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download CSV",
+                data=csv,
+                file_name=f"stock_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
+            )
+
+    st.divider()
+    st.markdown(f"""
+    <div style="text-align: center; color: #666; font-size: 12px; margin-top: 2rem;">
+        <p>📈 Stock Buy Zone Analyzer | Logged in as: {st.session_state.user_name}</p>
+        <p>Data from Yahoo Finance | Google Sheets Integration</p>
+    </div>
+    """, unsafe_allow_html=True)
