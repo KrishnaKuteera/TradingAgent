@@ -644,7 +644,7 @@ else:
                 show_buy_zone = st.checkbox("Buy Zone Only", value=False)
 
             with col2:
-                sort_by = st.selectbox("Sort by", ["Ticker", "Distance from 50-DMA", "Range Compression"])
+                sort_by = st.selectbox("Sort by", ["Ticker", "RS Score", "CANSLIM Score"])
 
             with col3:
                 search = st.text_input("Search ticker", "")
@@ -657,10 +657,10 @@ else:
             if search:
                 display_df = display_df[display_df['Ticker'].str.contains(search.upper())]
 
-            if sort_by == "Distance from 50-DMA":
-                display_df = display_df.sort_values('Distance_Value', ascending=True)
-            elif sort_by == "Range Compression":
-                display_df = display_df.sort_values('Range_Value', ascending=True)
+            if sort_by == "RS Score":
+                display_df = display_df.sort_values('RS', ascending=False)
+            elif sort_by == "CANSLIM Score":
+                display_df = display_df.sort_values('Score', ascending=False)
             else:
                 display_df = display_df.sort_values('Ticker')
 
