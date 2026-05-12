@@ -212,21 +212,34 @@ def fetch_tickers_with_sectors():
             if row and len(row) > ticker_idx and row[ticker_idx].strip():
                 tickers.append(row[ticker_idx].strip().upper())
 
-        # Fetch sector and sub-sector (industry) data from yfinance
+        # Fetch sector, sub-sector, and description from yfinance
         sectors = {}
         sub_sectors = {}
+        descriptions = {}
         for ticker in tickers:
             try:
                 info = yf.Ticker(ticker).info
                 sector = info.get('sector', 'Unknown')
                 industry = info.get('industry', 'Unknown')
+                # Get business description - try multiple fields
+                desc = info.get('longBusinessSummary', '')
+                if not desc:
+                    desc = info.get('businessSummary', '')
+                # Limit description to first 150 characters for readability
+                if desc:
+                    desc = desc[:150].rstrip() + '...' if len(desc) > 150 else desc
+                else:
+                    desc = 'N/A'
+
                 sectors[ticker] = sector if sector else 'Unknown'
                 sub_sectors[ticker] = industry if industry else 'Unknown'
+                descriptions[ticker] = desc
             except:
                 sectors[ticker] = 'Unknown'
                 sub_sectors[ticker] = 'Unknown'
+                descriptions[ticker] = 'N/A'
 
-        return tickers, sectors, sub_sectors
+        return tickers, sectors, sub_sectors, descriptions
     except Exception as e:
         st.error(f"Error fetching tickers: {str(e)}")
         return [], {}, {}
@@ -234,7 +247,7 @@ def fetch_tickers_with_sectors():
 @st.cache_data(ttl=300)
 def fetch_tickers():
     """Fetch tickers from 'Tickers' tab (backward compatibility)"""
-    tickers, _, _ = fetch_tickers_with_sectors()
+    tickers, _, _, _ = fetch_tickers_with_sectors()
     return tickers
 
 # Analyze stocks with CANSLIM metrics
@@ -420,19 +433,21 @@ def display_canslim_badges(df):
     return pd.DataFrame(canslim_cols)
 
 # Display sector/sub-sector breakdown
-def display_sector_subsector_breakdown(df, sectors, sub_sectors):
-    """Display stocks in simple sector and industry table"""
+def display_sector_subsector_breakdown(df, sectors, sub_sectors, descriptions):
+    """Display stocks in simple sector, industry, and description table"""
     sector_data = []
 
     for _, row in df.iterrows():
         ticker = row['Ticker']
         sector = sectors.get(ticker, 'Unknown')
         industry = sub_sectors.get(ticker, 'Unknown')
+        description = descriptions.get(ticker, 'N/A')
 
         sector_data.append({
             'Ticker': ticker,
             'Sector': sector,
             'Industry': industry,
+            'What They Do': description,
             'Price': row.get('Price', 'N/A'),
             'RS': row.get('RS', 0),
             'Match': row.get('Match', '❌')
@@ -443,7 +458,8 @@ def display_sector_subsector_breakdown(df, sectors, sub_sectors):
                 column_config={
                     "Ticker": st.column_config.TextColumn(width="small"),
                     "Sector": st.column_config.TextColumn(width="medium"),
-                    "Industry": st.column_config.TextColumn(width="large"),
+                    "Industry": st.column_config.TextColumn(width="medium"),
+                    "What They Do": st.column_config.TextColumn(width="large"),
                     "Price": st.column_config.TextColumn(width="small"),
                     "RS": st.column_config.NumberColumn(width="small", format="%d"),
                     "Match": st.column_config.TextColumn(width="small"),
@@ -542,7 +558,7 @@ else:
 
         # Sector Distribution Pie Chart
         st.subheader("📊 Stock Distribution by Sector")
-        _, sectors, sub_sectors = fetch_tickers_with_sectors()
+        _, sectors, sub_sectors, _ = fetch_tickers_with_sectors()
 
         sector_counts = {}
         for ticker in df['Ticker']:
@@ -616,8 +632,8 @@ else:
         with tab_sectors:
             st.subheader("Stock Distribution by Sector & Sub-sector")
             st.markdown("Stocks grouped by industry classification from Yahoo Finance:")
-            _, sectors, sub_sectors = fetch_tickers_with_sectors()
-            display_sector_subsector_breakdown(df, sectors, sub_sectors)
+            _, sectors, sub_sectors, descriptions = fetch_tickers_with_sectors()
+            display_sector_subsector_breakdown(df, sectors, sub_sectors, descriptions)
 
         st.divider()
 
