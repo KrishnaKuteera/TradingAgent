@@ -211,43 +211,79 @@ def fetch_tickers_with_sectors():
             if row and len(row) > ticker_idx and row[ticker_idx].strip():
                 tickers.append(row[ticker_idx].strip().upper())
 
-        # Fetch sector data from yfinance
+        # Fetch sector and sub-sector (industry) data from yfinance
         sectors = {}
+        sub_sectors = {}
         for ticker in tickers:
             try:
                 info = yf.Ticker(ticker).info
                 sector = info.get('sector', 'Unknown')
+                industry = info.get('industry', 'Unknown')
                 sectors[ticker] = sector if sector else 'Unknown'
+                sub_sectors[ticker] = industry if industry else 'Unknown'
             except:
                 sectors[ticker] = 'Unknown'
+                sub_sectors[ticker] = 'Unknown'
 
-        return tickers, sectors
+        return tickers, sectors, sub_sectors
     except Exception as e:
         st.error(f"Error fetching tickers: {str(e)}")
-        return [], {}
+        return [], {}, {}
 
 @st.cache_data(ttl=300)
 def fetch_tickers():
     """Fetch tickers from 'Tickers' tab (backward compatibility)"""
-    tickers, _ = fetch_tickers_with_sectors()
+    tickers, _, _ = fetch_tickers_with_sectors()
     return tickers
 
-# Analyze stocks
+# Analyze stocks with CANSLIM metrics
 def analyze_stocks(tickers):
-    """Analyze stocks for buy zone signals"""
+    """Analyze stocks for buy zone signals + CANSLIM metrics"""
     results = []
     progress_bar = st.progress(0)
     status_text = st.empty()
 
+    # Download SPY for RS Rating calculation (once at the start)
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365)
+    try:
+        spy_data = yf.download('SPY', start=start_date, end=end_date, progress=False)
+        spy_return = ((spy_data['Close'].iloc[-1] - spy_data['Close'].iloc[0]) / spy_data['Close'].iloc[0]) * 100
+    except:
+        spy_return = 10  # Default fallback
+        spy_data = None
+
+    # Calculate RS Ratings for all tickers first (for ranking)
+    rs_ratings = {}
+    for idx, ticker in enumerate(tickers):
+        status_text.text(f"Calculating RS Rating... {ticker} ({idx+1}/{len(tickers)})")
+        try:
+            data_365 = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            if len(data_365) > 0:
+                ticker_return = ((data_365['Close'].iloc[-1] - data_365['Close'].iloc[0]) / data_365['Close'].iloc[0]) * 100
+                rs_value = (ticker_return / spy_return) * 100 if spy_return != 0 else 50
+                rs_ratings[ticker] = rs_value
+            else:
+                rs_ratings[ticker] = 0
+        except:
+            rs_ratings[ticker] = 0
+
+    # Rank RS ratings and convert to 1-99 scale
+    sorted_rs = sorted(rs_ratings.items(), key=lambda x: x[1], reverse=True)
+    rs_rank = {ticker: int((i / len(tickers)) * 99) + 1 for i, (ticker, _) in enumerate(sorted_rs)}
+
+    # Analyze individual stocks
     for idx, ticker in enumerate(tickers):
         status_text.text(f"Analyzing {ticker}... ({idx+1}/{len(tickers)})")
         progress_bar.progress((idx + 1) / len(tickers))
 
         try:
             end_date = datetime.now()
-            start_date = end_date - timedelta(days=100)
+            start_date_100 = end_date - timedelta(days=100)
+            start_date_252 = end_date - timedelta(days=252)
 
-            data = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            # Download 252 days of data for all calculations
+            data = yf.download(ticker, start=start_date_252, end=end_date, progress=False)
 
             if len(data) == 0:
                 results.append({
@@ -257,24 +293,45 @@ def analyze_stocks(tickers):
                     '50-DMA': 'N/A',
                     'Distance from 50-DMA': 'N/A',
                     'Signal': 'No Data',
-                    'Buy Zone': False
+                    'Buy Zone': False,
+                    'RS Rating': 0,
+                    'Above 200-DMA': False,
+                    'Volume Surge': False,
+                    '52W High %': 0,
+                    'Above Pivot': False
                 })
                 continue
 
+            # Extract current price and moving averages
             current_price = data['Close'].iloc[-1].item() if hasattr(data['Close'].iloc[-1], 'item') else float(data['Close'].iloc[-1])
             sma_50 = data['Close'].tail(50).mean().item() if hasattr(data['Close'].tail(50).mean(), 'item') else float(data['Close'].tail(50).mean())
+            sma_200 = data['Close'].tail(200).mean().item() if hasattr(data['Close'].tail(200).mean(), 'item') else float(data['Close'].tail(200).mean())
 
             high_52w = data['High'].tail(252).max().item() if hasattr(data['High'].tail(252).max(), 'item') else float(data['High'].tail(252).max())
             low_52w = data['Low'].tail(252).min().item() if hasattr(data['Low'].tail(252).min(), 'item') else float(data['Low'].tail(252).min())
             recent_high = data['High'].tail(20).max().item() if hasattr(data['High'].tail(20).max(), 'item') else float(data['High'].tail(20).max())
             recent_low = data['Low'].tail(20).min().item() if hasattr(data['Low'].tail(20).min(), 'item') else float(data['Low'].tail(20).min())
+            pivot_high = data['High'].tail(10).max().item() if hasattr(data['High'].tail(10).max(), 'item') else float(data['High'].tail(10).max())
 
+            # Volume calculations
+            today_volume = data['Volume'].iloc[-1].item() if hasattr(data['Volume'].iloc[-1], 'item') else float(data['Volume'].iloc[-1])
+            avg_50_volume = data['Volume'].tail(50).mean().item() if hasattr(data['Volume'].tail(50).mean(), 'item') else float(data['Volume'].tail(50).mean())
+
+            # Distance calculations
             distance_from_dma = ((current_price - sma_50) / sma_50) * 100
+            high_52w_pct = ((high_52w - current_price) / high_52w) * 100 if high_52w > 0 else 0
 
             recent_range = recent_high - recent_low
             hist_range = high_52w - low_52w
             range_compression = (recent_range / hist_range) * 100 if hist_range > 0 else 0
 
+            # CANSLIM Flags
+            above_200_dma = current_price > sma_200
+            volume_surge = today_volume > (avg_50_volume * 1.5)
+            above_pivot = current_price > pivot_high
+            rs_rating_value = rs_rank.get(ticker, 50)
+
+            # Buy Zone Logic
             is_buy_zone = False
             signals = []
 
@@ -286,6 +343,15 @@ def analyze_stocks(tickers):
                 is_buy_zone = True
                 signals.append("📦 Tight Range (VCP)")
 
+            if above_200_dma:
+                signals.append("⬆️ Above 200-DMA")
+
+            if volume_surge:
+                signals.append("📈 Vol Surge")
+
+            if above_pivot:
+                signals.append("🎯 Above Pivot")
+
             results.append({
                 'Ticker': ticker,
                 'Status': '✅' if is_buy_zone else '⭕',
@@ -296,7 +362,15 @@ def analyze_stocks(tickers):
                 'Signal': ' | '.join(signals) if signals else 'No Signal',
                 'Buy Zone': is_buy_zone,
                 'Distance_Value': distance_from_dma,
-                'Range_Value': range_compression
+                'Range_Value': range_compression,
+                'RS Rating': rs_rating_value,
+                'Above 200-DMA': above_200_dma,
+                'Volume Surge': volume_surge,
+                '52W High %': high_52w_pct,
+                'Above Pivot': above_pivot,
+                'Pivot Point': f"${pivot_high:.2f}",
+                'Sector': '',  # Will be filled later
+                'Industry': ''  # Will be filled later
             })
 
         except Exception as e:
@@ -307,7 +381,12 @@ def analyze_stocks(tickers):
                 '50-DMA': 'Error',
                 'Distance from 50-DMA': 'Error',
                 'Signal': f'Error: {str(e)[:30]}',
-                'Buy Zone': False
+                'Buy Zone': False,
+                'RS Rating': 0,
+                'Above 200-DMA': False,
+                'Volume Surge': False,
+                '52W High %': 0,
+                'Above Pivot': False
             })
 
     progress_bar.empty()
@@ -425,7 +504,7 @@ else:
 
         # Sector Distribution Pie Chart
         st.subheader("📊 Stock Distribution by Sector")
-        _, sectors = fetch_tickers_with_sectors()
+        _, sectors, sub_sectors = fetch_tickers_with_sectors()
 
         sector_counts = {}
         for ticker in df['Ticker']:
