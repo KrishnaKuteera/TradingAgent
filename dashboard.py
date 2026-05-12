@@ -664,8 +664,7 @@ else:
             else:
                 display_df = display_df.sort_values('Ticker')
 
-            display_cols = display_df[['Ticker', 'Status', 'Current Price', '50-DMA', 'Distance from 50-DMA', 'Range Compression', 'Signal']]
-            display_cols = display_cols.rename(columns={'Status': '', 'Range Compression': 'Compression'})
+            display_cols = display_df[['Ticker', 'Match', 'Price', 'RS', 'Vol Surge', 'Trend (M)', 'Pivot', 'CANSLIM', 'Score']]
 
             st.dataframe(display_cols, use_container_width=True, hide_index=True)
 
@@ -680,7 +679,7 @@ else:
     st.divider()
     st.markdown(f"""
     <div style="text-align: center; color: #666; font-size: 12px; margin-top: 2rem;">
-        <p>📈 Stock Buy Zone Analyzer | Logged in as: {st.session_state.user_name}</p>
+        <p>📊 StockScreener - CANSLIM Analyzer | Logged in as: {st.session_state.user_name}</p>
         <p>Data from Yahoo Finance | Google Sheets Integration</p>
     </div>
     """, unsafe_allow_html=True)
