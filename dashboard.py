@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import json
 import os
 import bcrypt
+import pytz
 
 # Page configuration
 st.set_page_config(
@@ -519,7 +520,8 @@ else:
             st.info(f"📊 Found {len(tickers)} tickers to analyze")
             results = analyze_stocks(tickers)
             st.session_state.analysis_results = results
-            st.session_state.last_update = datetime.now()
+            toronto_tz = pytz.timezone('America/Toronto')
+            st.session_state.last_update = datetime.now(toronto_tz)
         else:
             st.error("Could not fetch tickers from Google Sheets")
             st.stop()
@@ -669,10 +671,12 @@ else:
             st.dataframe(display_cols, use_container_width=True, hide_index=True)
 
             csv = display_df.to_csv(index=False)
+            toronto_tz = pytz.timezone('America/Toronto')
+            current_time = datetime.now(toronto_tz).strftime('%Y%m%d_%H%M%S')
             st.download_button(
                 label="📥 Download CSV",
                 data=csv,
-                file_name=f"stock_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                file_name=f"stock_analysis_{current_time}.csv",
                 mime="text/csv"
             )
 
