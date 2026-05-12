@@ -419,50 +419,35 @@ def display_canslim_badges(df):
 
     return pd.DataFrame(canslim_cols)
 
-# Display sector/sub-sector drill-down
+# Display sector/sub-sector breakdown
 def display_sector_subsector_breakdown(df, sectors, sub_sectors):
-    """Display stocks grouped by sector and sub-sector"""
-    sector_groups = {}
+    """Display stocks in simple sector and industry table"""
+    sector_data = []
 
     for _, row in df.iterrows():
         ticker = row['Ticker']
         sector = sectors.get(ticker, 'Unknown')
-        sub_sector = sub_sectors.get(ticker, 'Unknown')
+        industry = sub_sectors.get(ticker, 'Unknown')
 
-        if sector not in sector_groups:
-            sector_groups[sector] = {}
-        if sub_sector not in sector_groups[sector]:
-            sector_groups[sector][sub_sector] = []
-
-        sector_groups[sector][sub_sector].append({
+        sector_data.append({
             'Ticker': ticker,
+            'Sector': sector,
+            'Industry': industry,
             'Price': row.get('Price', 'N/A'),
             'RS': row.get('RS', 0),
-            'Match': row.get('Match', '❌'),
-            'Score': row.get('Score', 0)
+            'Match': row.get('Match', '❌')
         })
 
-    for sector in sorted(sector_groups.keys()):
-        stock_count = sum(len(tickers) for tickers in sector_groups[sector].values())
-        match_count = sum(1 for tickers in sector_groups[sector].values() for t in tickers if t['Match'] == '✅')
-
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            st.subheader(f"{sector}")
-        with col2:
-            st.metric("Matches", match_count, f"of {stock_count}")
-
-        for sub_sector in sorted(sector_groups[sector].keys()):
-            with st.expander(f"└─ {sub_sector} ({len(sector_groups[sector][sub_sector])} stocks)"):
-                sub_df = pd.DataFrame(sector_groups[sector][sub_sector])
-                st.dataframe(sub_df, use_container_width=True, hide_index=True,
-                           column_config={
-                               "Ticker": st.column_config.TextColumn(width="small"),
-                               "Price": st.column_config.TextColumn(width="small"),
-                               "RS": st.column_config.NumberColumn(width="small"),
-                               "Match": st.column_config.TextColumn(width="small"),
-                               "Score": st.column_config.NumberColumn(width="small"),
-                           })
+    sector_df = pd.DataFrame(sector_data).sort_values(['Sector', 'Industry', 'Ticker'])
+    st.dataframe(sector_df, use_container_width=True, hide_index=True,
+                column_config={
+                    "Ticker": st.column_config.TextColumn(width="small"),
+                    "Sector": st.column_config.TextColumn(width="medium"),
+                    "Industry": st.column_config.TextColumn(width="large"),
+                    "Price": st.column_config.TextColumn(width="small"),
+                    "RS": st.column_config.NumberColumn(width="small", format="%d"),
+                    "Match": st.column_config.TextColumn(width="small"),
+                })
 
 # ============= AUTHENTICATION UI =============
 if not st.session_state.authenticated:
