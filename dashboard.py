@@ -69,27 +69,28 @@ def fetch_users_from_sheet():
     """Fetch user credentials from 'Auth' tab in Google Sheet"""
     try:
         client = get_gspread_client()
-        spreadsheet = client.open('Copy of StockTracker')
+        spreadsheet = client.open('StockTracker')
 
         # Try to get the 'Auth' worksheet
         try:
             auth_sheet = spreadsheet.worksheet('Auth')
         except:
-            st.error("❌ 'Auth' tab not found in Google Sheet. Please create it with columns: username, password, email, name")
+            st.error("❌ 'Auth' tab not found in Google Sheet. Please create it with columns: username, password")
             st.stop()
 
         # Get all values from Auth sheet
         all_values = auth_sheet.get_all_values()
 
         if len(all_values) < 2:
-            st.error("❌ 'Auth' tab is empty. Add users with: username, password, email, name")
+            st.error("❌ 'Auth' tab is empty. Add users with: username, password")
             st.stop()
 
         # Parse header and users
         headers = all_values[0]
         users = []
 
-        required_cols = ['username', 'password', 'email', 'name']
+        required_cols = ['username', 'password']
+        optional_cols = ['email', 'name']
         header_lower = [h.lower().strip() for h in headers]
 
         # Check if all required columns exist
@@ -98,18 +99,24 @@ def fetch_users_from_sheet():
                 st.error(f"❌ Missing required column in Auth tab: '{col}'")
                 st.stop()
 
-        # Get column indices
+        # Get column indices for required and optional columns
         col_indices = {col: header_lower.index(col) for col in required_cols}
+        for col in optional_cols:
+            if col in header_lower:
+                col_indices[col] = header_lower.index(col)
 
         # Build user list
         for row in all_values[1:]:
-            if len(row) > max(col_indices.values()) and row[0].strip():  # Skip empty rows
-                users.append({
+            if len(row) > 1 and row[0].strip():  # Skip empty rows, need at least username and password
+                user_data = {
                     'username': row[col_indices['username']].strip(),
                     'password': row[col_indices['password']].strip(),
-                    'email': row[col_indices['email']].strip(),
-                    'name': row[col_indices['name']].strip()
-                })
+                }
+                if 'email' in col_indices and len(row) > col_indices['email']:
+                    user_data['email'] = row[col_indices['email']].strip()
+                if 'name' in col_indices and len(row) > col_indices['name']:
+                    user_data['name'] = row[col_indices['name']].strip()
+                users.append(user_data)
 
         if not users:
             st.error("❌ No users found in Auth tab")
@@ -146,8 +153,7 @@ def login(users, username, password):
             if validate_password(user['password'], password):
                 st.session_state.authenticated = True
                 st.session_state.username = username
-                st.session_state.user_email = user['email']
-                st.session_state.user_name = user['name']
+                st.session_state.user_name = user['username']
                 return True
     return False
 
@@ -156,30 +162,55 @@ def logout():
     """Logout user"""
     st.session_state.authenticated = False
     st.session_state.username = None
-    st.session_state.user_email = None
     st.session_state.user_name = None
 
-# Fetch tickers from Tickers tab
+# Fetch tickers and sectors from Tickers tab
 @st.cache_data(ttl=300)
-def fetch_tickers():
-    """Fetch tickers from 'Tickers' tab (caching for 5 min)"""
+def fetch_tickers_with_sectors():
+    """Fetch tickers and their sectors from 'Tickers' tab (caching for 5 min)"""
     try:
         client = get_gspread_client()
-        spreadsheet = client.open('Copy of StockTracker')
+        spreadsheet = client.open('StockTracker')
 
         # Try to get the 'Tickers' worksheet
         try:
             worksheet = spreadsheet.worksheet('Tickers')
         except:
-            # Fall back to sheet1 if 'Tickers' tab doesn't exist
             worksheet = spreadsheet.sheet1
 
         all_values = worksheet.get_all_values()
-        tickers = [row[0].strip().upper() for row in all_values[1:] if row and row[0].strip()]
-        return tickers
+
+        if not all_values:
+            return [], {}
+
+        headers = [h.lower().strip() for h in all_values[0]]
+        ticker_idx = headers.index('ticker') if 'ticker' in headers else 0
+
+        tickers = []
+        for row in all_values[1:]:
+            if row and len(row) > ticker_idx and row[ticker_idx].strip():
+                tickers.append(row[ticker_idx].strip().upper())
+
+        # Fetch sector data from yfinance
+        sectors = {}
+        for ticker in tickers:
+            try:
+                info = yf.Ticker(ticker).info
+                sector = info.get('sector', 'Unknown')
+                sectors[ticker] = sector if sector else 'Unknown'
+            except:
+                sectors[ticker] = 'Unknown'
+
+        return tickers, sectors
     except Exception as e:
         st.error(f"Error fetching tickers: {str(e)}")
-        return []
+        return [], {}
+
+@st.cache_data(ttl=300)
+def fetch_tickers():
+    """Fetch tickers from 'Tickers' tab (backward compatibility)"""
+    tickers, _ = fetch_tickers_with_sectors()
+    return tickers
 
 # Analyze stocks
 def analyze_stocks(tickers):
@@ -293,7 +324,6 @@ else:
 
     # Sidebar with user info and logout
     st.sidebar.markdown(f"### 👤 {st.session_state.user_name}")
-    st.sidebar.markdown(f"*{st.session_state.user_email}*")
 
     if st.sidebar.button("🚪 Logout", use_container_width=True):
         logout()
@@ -370,6 +400,32 @@ else:
                 <p>{st.session_state.last_update.strftime('%m/%d/%Y')}</p>
             </div>
             """, unsafe_allow_html=True)
+
+        st.divider()
+
+        # Sector Distribution Pie Chart
+        st.subheader("📊 Stock Distribution by Sector")
+        _, sectors = fetch_tickers_with_sectors()
+
+        sector_counts = {}
+        for ticker in df['Ticker']:
+            if ticker in sectors:
+                sector = sectors[ticker]
+                sector_counts[sector] = sector_counts.get(sector, 0) + 1
+
+        if sector_counts:
+            # Create pie chart
+            fig = go.Figure(data=[go.Pie(
+                labels=list(sector_counts.keys()),
+                values=list(sector_counts.values()),
+                hole=0.3
+            )])
+            fig.update_layout(
+                title="Stocks by Sector",
+                height=400,
+                showlegend=True
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
         st.divider()
 
