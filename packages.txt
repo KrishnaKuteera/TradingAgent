@@ -1,3 +1,5 @@
+build-essential
+python3-dev
 libssl-dev
 zlib1g-dev
 libjpeg-dev
@@ -5,3 +7,5 @@ libpng-dev
 libfreetype6-dev
 libharfbuzz-dev
 libwebp-dev
+libtiff-dev
+libopenjp2-7-dev
