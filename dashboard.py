@@ -11,8 +11,8 @@ import bcrypt
 
 # Page configuration
 st.set_page_config(
-    page_title="Stock Buy Zone Analyzer",
-    page_icon="📈",
+    page_title="StockScreener - CANSLIM Analyzer",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -331,62 +331,63 @@ def analyze_stocks(tickers):
             above_pivot = current_price > pivot_high
             rs_rating_value = rs_rank.get(ticker, 50)
 
-            # Buy Zone Logic
-            is_buy_zone = False
-            signals = []
+            # CANSLIM Screening Logic
+            canslim_score = 0
+            canslim_signals = []
 
-            if abs(distance_from_dma) <= 3:
-                is_buy_zone = True
-                signals.append("📍 Within 3% of 50-DMA")
+            # L - Leader (RS Rating > 70)
+            if rs_rating_value > 70:
+                canslim_score += 1
+                canslim_signals.append("L")
 
-            if range_compression < 30:
-                is_buy_zone = True
-                signals.append("📦 Tight Range (VCP)")
-
-            if above_200_dma:
-                signals.append("⬆️ Above 200-DMA")
-
+            # S - Supply/Demand (Volume Surge)
             if volume_surge:
-                signals.append("📈 Vol Surge")
+                canslim_score += 1
+                canslim_signals.append("S")
 
-            if above_pivot:
-                signals.append("🎯 Above Pivot")
+            # M - Market (Above 200-DMA)
+            if above_200_dma:
+                canslim_score += 1
+                canslim_signals.append("M")
+
+            # N - New Highs/Pivot
+            if above_pivot or high_52w_pct < 10:
+                canslim_score += 1
+                canslim_signals.append("N")
+
+            # A/C/I - Will need external data (not in daily OHLCV)
+            # For now, we flag stocks that meet L+S+M+N
+
+            is_buy_zone = canslim_score >= 3  # Passes if 3+ CANSLIM criteria met
+            signals = [f"CANSLIM: {', '.join(canslim_signals)}" if canslim_signals else "No CANSLIM Match"]
 
             results.append({
                 'Ticker': ticker,
-                'Status': '✅' if is_buy_zone else '⭕',
-                'Current Price': f"${current_price:.2f}",
-                '50-DMA': f"${sma_50:.2f}",
-                'Distance from 50-DMA': f"{distance_from_dma:+.2f}%",
-                'Range Compression': f"{range_compression:.1f}%",
-                'Signal': ' | '.join(signals) if signals else 'No Signal',
-                'Buy Zone': is_buy_zone,
-                'Distance_Value': distance_from_dma,
-                'Range_Value': range_compression,
-                'RS Rating': rs_rating_value,
-                'Above 200-DMA': above_200_dma,
-                'Volume Surge': volume_surge,
-                '52W High %': high_52w_pct,
-                'Above Pivot': above_pivot,
-                'Pivot Point': f"${pivot_high:.2f}",
-                'Sector': '',  # Will be filled later
-                'Industry': ''  # Will be filled later
+                'Match': '✅' if is_buy_zone else '❌',
+                'Price': f"${current_price:.2f}",
+                'RS': rs_rating_value,
+                'Vol Surge': '✅' if volume_surge else '❌',
+                'Trend (M)': '✅' if above_200_dma else '❌',
+                'Pivot': '✅' if above_pivot else '❌',
+                '52W High %': f"{high_52w_pct:.1f}%",
+                'CANSLIM': ' '.join(canslim_signals) if canslim_signals else 'N/A',
+                'Score': canslim_score,
+                'Buy Zone': is_buy_zone
             })
 
         except Exception as e:
             results.append({
                 'Ticker': ticker,
-                'Status': '❌',
-                'Current Price': 'Error',
-                '50-DMA': 'Error',
-                'Distance from 50-DMA': 'Error',
-                'Signal': f'Error: {str(e)[:30]}',
-                'Buy Zone': False,
-                'RS Rating': 0,
-                'Above 200-DMA': False,
-                'Volume Surge': False,
-                '52W High %': 0,
-                'Above Pivot': False
+                'Match': '❌',
+                'Price': 'Error',
+                'RS': 0,
+                'Vol Surge': '❌',
+                'Trend (M)': '❌',
+                'Pivot': '❌',
+                '52W High %': 'N/A',
+                'CANSLIM': 'Error',
+                'Score': 0,
+                'Buy Zone': False
             })
 
     progress_bar.empty()
@@ -434,17 +435,33 @@ def display_sector_subsector_breakdown(df, sectors, sub_sectors):
 
         sector_groups[sector][sub_sector].append({
             'Ticker': ticker,
-            'Price': row.get('Current Price', 'N/A'),
-            'RS': row.get('RS Rating', 0),
-            'Signal': row.get('Signal', 'No Signal')
+            'Price': row.get('Price', 'N/A'),
+            'RS': row.get('RS', 0),
+            'Match': row.get('Match', '❌'),
+            'Score': row.get('Score', 0)
         })
 
     for sector in sorted(sector_groups.keys()):
-        with st.expander(f"📊 {sector} ({sum(len(tickers) for tickers in sector_groups[sector].values())} stocks)", expanded=False):
-            for sub_sector in sorted(sector_groups[sector].keys()):
-                st.subheader(f"  └─ {sub_sector}")
+        stock_count = sum(len(tickers) for tickers in sector_groups[sector].values())
+        match_count = sum(1 for tickers in sector_groups[sector].values() for t in tickers if t['Match'] == '✅')
+
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.subheader(f"{sector}")
+        with col2:
+            st.metric("Matches", match_count, f"of {stock_count}")
+
+        for sub_sector in sorted(sector_groups[sector].keys()):
+            with st.expander(f"└─ {sub_sector} ({len(sector_groups[sector][sub_sector])} stocks)"):
                 sub_df = pd.DataFrame(sector_groups[sector][sub_sector])
-                st.dataframe(sub_df, use_container_width=True, hide_index=True)
+                st.dataframe(sub_df, use_container_width=True, hide_index=True,
+                           column_config={
+                               "Ticker": st.column_config.TextColumn(width="small"),
+                               "Price": st.column_config.TextColumn(width="small"),
+                               "RS": st.column_config.NumberColumn(width="small"),
+                               "Match": st.column_config.TextColumn(width="small"),
+                               "Score": st.column_config.NumberColumn(width="small"),
+                           })
 
 # ============= AUTHENTICATION UI =============
 if not st.session_state.authenticated:
@@ -485,11 +502,13 @@ else:
     st.sidebar.header("⚙️ Configuration")
     refresh_button = st.sidebar.button("🔄 Run Analysis", use_container_width=True)
 
-    st.title("📈 Stock Buy Zone Analyzer")
+    st.title("📊 StockScreener - CANSLIM Analyzer")
     st.markdown("""
-    Analyze your stock portfolio to identify **buy zone opportunities**:
-    - Stocks within **3% of 50-day moving average** (support levels)
-    - Stocks with **tight price ranges** (VCP consolidation patterns)
+    **CANSLIM Stock Screening System** (William O'Neill)
+    - **L**: Leader stocks (RS Rating > 70)
+    - **S**: Strong volume surge (1.5x average)
+    - **M**: Uptrend (above 200-day moving average)
+    - **N**: New highs/pivot breakout
     """)
 
     # Analysis logic
@@ -518,40 +537,19 @@ else:
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>✅ Buy Zone Stocks</h3>
-                <h1>{len(buy_zone_stocks)}</h1>
-                <p>out of {len(df)} total</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("✅ CANSLIM Match", len(buy_zone_stocks), f"of {len(df)}")
 
         with col2:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>📍 3% of 50-DMA</h3>
-                <h1>{len(df[df['Signal'].str.contains('Within 3%', na=False)])}</h1>
-                <p>Support levels</p>
-            </div>
-            """, unsafe_allow_html=True)
+            leader_count = len(df[df['RS'] > 70])
+            st.metric("📈 Leaders (L)", leader_count, f"{(leader_count/len(df)*100):.0f}%")
 
         with col3:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>📦 VCP Patterns</h3>
-                <h1>{len(df[df['Signal'].str.contains('Tight Range', na=False)])}</h1>
-                <p>Consolidations</p>
-            </div>
-            """, unsafe_allow_html=True)
+            vol_count = len(df[df['Vol Surge'] == '✅'])
+            st.metric("📊 Vol Surge (S)", vol_count, f"{(vol_count/len(df)*100):.0f}%")
 
         with col4:
-            st.markdown(f"""
-            <div class="metric-card">
-                <h3>⏰ Last Update</h3>
-                <p>{st.session_state.last_update.strftime('%I:%M %p')}</p>
-                <p>{st.session_state.last_update.strftime('%m/%d/%Y')}</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("Last Update", st.session_state.last_update.strftime('%I:%M %p'),
+                     st.session_state.last_update.strftime('%m/%d/%Y'))
 
         st.divider()
 
@@ -581,83 +579,29 @@ else:
 
         st.divider()
 
-        # Buy Zone Stocks Section
+        # CANSLIM Match Stocks Section
         if len(buy_zone_stocks) > 0:
-            st.subheader("🎯 Buy Zone Stocks (Action Zone)")
+            st.subheader(f"✅ CANSLIM Matches ({len(buy_zone_stocks)} stocks)")
 
-            buy_zone_display = buy_zone_stocks[['Ticker', 'Status', 'Current Price', '50-DMA', 'Distance from 50-DMA', 'Range Compression', 'Signal']].copy()
-            buy_zone_display = buy_zone_display.rename(columns={
-                'Status': '',
-                'Range Compression': 'Compression'
-            })
+            canslim_display = buy_zone_stocks[['Ticker', 'Price', 'RS', 'Vol Surge', 'Trend (M)', 'Pivot', '52W High %', 'CANSLIM', 'Score']].copy()
 
             st.dataframe(
-                buy_zone_display,
+                canslim_display,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
                     "Ticker": st.column_config.TextColumn(width="small"),
-                    "": st.column_config.TextColumn(width="small"),
-                    "Current Price": st.column_config.TextColumn(width="medium"),
-                    "50-DMA": st.column_config.TextColumn(width="medium"),
-                    "Distance from 50-DMA": st.column_config.TextColumn(width="medium"),
-                    "Compression": st.column_config.TextColumn(width="small"),
-                    "Signal": st.column_config.TextColumn(width="large"),
+                    "Price": st.column_config.TextColumn(width="small"),
+                    "RS": st.column_config.NumberColumn(width="small", format="%d"),
+                    "Vol Surge": st.column_config.TextColumn(width="small"),
+                    "Trend (M)": st.column_config.TextColumn(width="small"),
+                    "Pivot": st.column_config.TextColumn(width="small"),
+                    "52W High %": st.column_config.TextColumn(width="small"),
+                    "CANSLIM": st.column_config.TextColumn(width="medium"),
+                    "Score": st.column_config.NumberColumn(width="small"),
                 }
             )
 
-            # Charts for buy zone stocks
-            col1, col2 = st.columns(2)
-
-            with col1:
-                buy_zone_chart = buy_zone_stocks.sort_values('Distance_Value', ascending=True)
-                fig = go.Figure(data=[
-                    go.Bar(
-                        x=buy_zone_chart['Ticker'],
-                        y=buy_zone_chart['Distance_Value'],
-                        marker=dict(
-                            color=buy_zone_chart['Distance_Value'],
-                            colorscale='RdYlGn_r',
-                            cmin=-3,
-                            cmax=3,
-                            showscale=False
-                        ),
-                        text=buy_zone_chart['Distance_Value'].apply(lambda x: f"{x:+.2f}%"),
-                        textposition='auto'
-                    )
-                ])
-                fig.update_layout(
-                    title="Distance from 50-DMA (Buy Zone)",
-                    xaxis_title="Ticker",
-                    yaxis_title="Distance (%)",
-                    height=400,
-                    showlegend=False,
-                    hovermode='x unified'
-                )
-                fig.add_hline(y=3, line_dash="dash", line_color="red", annotation_text="3% threshold", annotation_position="right")
-                fig.add_hline(y=-3, line_dash="dash", line_color="red", annotation_text="-3% threshold", annotation_position="right")
-                st.plotly_chart(fig, use_container_width=True)
-
-            with col2:
-                fig2 = go.Figure(data=[
-                    go.Bar(
-                        x=buy_zone_stocks['Ticker'],
-                        y=buy_zone_stocks['Range_Value'],
-                        marker=dict(color='#1f77b4'),
-                        text=buy_zone_stocks['Range_Value'].apply(lambda x: f"{x:.1f}%"),
-                        textposition='auto'
-                    )
-                ])
-                fig2.update_layout(
-                    title="Range Compression (Buy Zone)",
-                    xaxis_title="Ticker",
-                    yaxis_title="Compression (%)",
-                    height=400,
-                    showlegend=False,
-                    hovermode='x unified'
-                )
-                fig2.add_hline(y=30, line_dash="dash", line_color="orange", annotation_text="VCP threshold", annotation_position="right")
-                st.plotly_chart(fig2, use_container_width=True)
 
         else:
             st.info("No stocks currently in buy zone. Check back later!")
