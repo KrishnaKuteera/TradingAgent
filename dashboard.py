@@ -399,21 +399,21 @@ def display_canslim_badges(df):
     """Display CANSLIM indicators as a table"""
     canslim_cols = []
     for _, row in df.iterrows():
-        rs_flag = "✅ L" if row.get('RS Rating', 0) > 70 else "❌ L"
-        vol_flag = "✅ S" if row.get('Volume Surge', False) else "❌ S"
-        trend_flag = "✅ M" if row.get('Above 200-DMA', False) else "❌ M"
-        high_flag = "✅ N" if row.get('52W High %', 100) < 10 else "❌ N"
-        pivot_flag = "✅ N" if row.get('Above Pivot', False) else "❌ N"
+        rs_val = row.get('RS', 0)
+        rs_flag = "✅ L" if rs_val > 70 else "❌ L"
+        vol_flag = "✅ S" if row.get('Vol Surge', '❌') == '✅' else "❌ S"
+        trend_flag = "✅ M" if row.get('Trend (M)', '❌') == '✅' else "❌ M"
+        pivot_flag = "✅ N" if row.get('Pivot', '❌') == '✅' else "❌ N"
 
         canslim_cols.append({
             'Ticker': row['Ticker'],
-            'RS (L)': rs_flag,
-            'Vol (S)': vol_flag,
-            'Trend (M)': trend_flag,
-            'Near High (N)': high_flag,
-            'Pivot (N)': pivot_flag,
-            'RS Score': f"{row.get('RS Rating', 0):.0f}",
-            '52W High %': f"{row.get('52W High %', 0):.1f}%"
+            'L': rs_flag,
+            'S': vol_flag,
+            'M': trend_flag,
+            'N': pivot_flag,
+            'RS Score': rs_val,
+            'CANSLIM': row.get('CANSLIM', 'N/A'),
+            'Score': row.get('Score', 0)
         })
 
     return pd.DataFrame(canslim_cols)
