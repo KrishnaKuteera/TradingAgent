@@ -69,19 +69,28 @@ def fetch_users_from_sheet():
     """Fetch user credentials from 'Auth' tab in Google Sheet"""
     try:
         client = get_gspread_client()
-        spreadsheet = client.open('StockTracker')
+
+        try:
+            spreadsheet = client.open('StockTracker')
+        except Exception as e:
+            st.error(f"❌ Could not open spreadsheet 'StockTracker': {str(e)}")
+            st.stop()
 
         # Try to get the 'Auth' worksheet
         try:
             auth_sheet = spreadsheet.worksheet('Auth')
-        except:
-            st.error("❌ 'Auth' tab not found in Google Sheet. Please create it with columns: username, password")
+        except Exception as e:
+            st.error(f"❌ 'Auth' tab not found. Error: {str(e)}")
             st.stop()
 
         # Get all values from Auth sheet
-        all_values = auth_sheet.get_all_values()
+        try:
+            all_values = auth_sheet.get_all_values()
+        except Exception as e:
+            st.error(f"❌ Could not read Auth sheet: {str(e)}")
+            st.stop()
 
-        if len(all_values) < 2:
+        if not all_values or len(all_values) < 2:
             st.error("❌ 'Auth' tab is empty. Add users with: username, password")
             st.stop()
 
