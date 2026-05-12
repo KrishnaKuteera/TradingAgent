@@ -664,6 +664,32 @@ else:
 
         st.divider()
 
+        # Additional Analysis Tabs
+        tab_canslim, tab_sectors = st.tabs(["📊 CANSLIM Analysis", "🏭 Sectors & Industries"])
+
+        with tab_canslim:
+            st.subheader("CANSLIM Breakdown - Stock Screening Indicators")
+            st.markdown("""
+            **CANSLIM (William O'Neil) Criteria:**
+            - **C** — Current Quarterly Earnings
+            - **A** — Annual Earnings Growth
+            - **N** — New Highs / Pivot Points
+            - **S** — Supply & Demand (Volume Surge)
+            - **L** — Leader (RS Rating > 70)
+            - **I** — Institutional Sponsorship
+            - **M** — Market Trend (Above 200-DMA)
+            """)
+            canslim_df = display_canslim_badges(df)
+            st.dataframe(canslim_df, use_container_width=True, hide_index=True)
+
+        with tab_sectors:
+            st.subheader("Stock Distribution by Sector & Sub-sector")
+            st.markdown("Stocks grouped by industry classification from Yahoo Finance:")
+            _, sectors, sub_sectors = fetch_tickers_with_sectors()
+            display_sector_subsector_breakdown(df, sectors, sub_sectors)
+
+        st.divider()
+
         # All stocks with filtering
         with st.expander("📊 View All Stocks", expanded=False):
             st.subheader("All Stocks Analysis")
