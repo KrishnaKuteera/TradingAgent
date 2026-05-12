@@ -393,6 +393,59 @@ def analyze_stocks(tickers):
     status_text.empty()
     return results
 
+# Display CANSLIM badges for each stock
+def display_canslim_badges(df):
+    """Display CANSLIM indicators as a table"""
+    canslim_cols = []
+    for _, row in df.iterrows():
+        rs_flag = "✅ L" if row.get('RS Rating', 0) > 70 else "❌ L"
+        vol_flag = "✅ S" if row.get('Volume Surge', False) else "❌ S"
+        trend_flag = "✅ M" if row.get('Above 200-DMA', False) else "❌ M"
+        high_flag = "✅ N" if row.get('52W High %', 100) < 10 else "❌ N"
+        pivot_flag = "✅ N" if row.get('Above Pivot', False) else "❌ N"
+
+        canslim_cols.append({
+            'Ticker': row['Ticker'],
+            'RS (L)': rs_flag,
+            'Vol (S)': vol_flag,
+            'Trend (M)': trend_flag,
+            'Near High (N)': high_flag,
+            'Pivot (N)': pivot_flag,
+            'RS Score': f"{row.get('RS Rating', 0):.0f}",
+            '52W High %': f"{row.get('52W High %', 0):.1f}%"
+        })
+
+    return pd.DataFrame(canslim_cols)
+
+# Display sector/sub-sector drill-down
+def display_sector_subsector_breakdown(df, sectors, sub_sectors):
+    """Display stocks grouped by sector and sub-sector"""
+    sector_groups = {}
+
+    for _, row in df.iterrows():
+        ticker = row['Ticker']
+        sector = sectors.get(ticker, 'Unknown')
+        sub_sector = sub_sectors.get(ticker, 'Unknown')
+
+        if sector not in sector_groups:
+            sector_groups[sector] = {}
+        if sub_sector not in sector_groups[sector]:
+            sector_groups[sector][sub_sector] = []
+
+        sector_groups[sector][sub_sector].append({
+            'Ticker': ticker,
+            'Price': row.get('Current Price', 'N/A'),
+            'RS': row.get('RS Rating', 0),
+            'Signal': row.get('Signal', 'No Signal')
+        })
+
+    for sector in sorted(sector_groups.keys()):
+        with st.expander(f"📊 {sector} ({sum(len(tickers) for tickers in sector_groups[sector].values())} stocks)", expanded=False):
+            for sub_sector in sorted(sector_groups[sector].keys()):
+                st.subheader(f"  └─ {sub_sector}")
+                sub_df = pd.DataFrame(sector_groups[sector][sub_sector])
+                st.dataframe(sub_df, use_container_width=True, hide_index=True)
+
 # ============= AUTHENTICATION UI =============
 if not st.session_state.authenticated:
     st.title("🔐 Stock Buy Zone Analyzer - Login")
