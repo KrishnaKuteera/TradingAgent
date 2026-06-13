@@ -2,6 +2,7 @@
 *.json
 .env
 *.key
+STREAMLIT_SECRETS.toml
 
 # Python
 __pycache__/

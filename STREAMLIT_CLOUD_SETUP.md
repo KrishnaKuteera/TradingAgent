@@ -20,32 +20,67 @@ Wait 2-3 minutes for deployment to complete...
 
 ---
 
-## Step 3: Add Google Service Account Secrets
+## Step 3: Add Secrets
 
 Once your app is deployed:
 
 1. Click the **three dots (⋮)** in the top right
 2. Select **Settings**
 3. Click **Secrets** in the left menu
-4. **Paste this entire TOML block** into the secrets editor:
+4. Paste the following, filling in your actual values:
 
 ```toml
 [gcp_service_account]
 type = "service_account"
 project_id = "tradeportfolioagent"
-private_key_id = "52f42fe31773db6383bb8383f78e3f2fae72a46a"
-private_key = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDdRvRDs04L0iSv\nH3jdw93ivUhyNs72IoklKq8V0NTQVQZ6WZG9g0VDzkNQyzmqKwrltqMQ5HkmpcE6\n4CVV0n4uKR07E40G9huuMtiGkWR0eagfTRKWvc5J04VMS+vn9Q0AEfQYJdvB3ZPa\ncG2feyvzAZ1ZTjELSzwnTqUxFyLZLG5ntHv9m/QXGMIQBVnjJFyp9saJ4OdXSFcS\nQIeRnHdw6aqloPzcgWAt8Zy+xa+8CKFh16MjLW6YtuCMwG/P732NvjWbefU9OfIM\nCGYHCKct7xgignxTLREEv1RwWkDZnP8ANJRLdDLBLOcyo8agC3RfkLk9IxlKdxHV\nYhBtfl+HAgMBAAECggEACcYcM4tWomctD37mvZxaj1GRedl1MmIt/sR90gs5TF2d\nFGxHsMl88hltfHmcZ2BQ6PrGvCJaPiohb6cZpe9PDaZ9r/jVdjl4RxsEj4ti8i1F\nM750/RkhUpmhJywXC0OoWmrwmJOa8iRz5xQ5zaZbN4ojpZ+N570pEkFnsGZ8AMk7\nZEibfdM9pWOFCDsMKVl9XyN3ZfxGILGrwJ/93jzZvgZmicxjuxYVeEKaHUTpWLJo\nS/xaSN/9250OiMt1B2XN76uF3nbIgxPIzekrP45TI7Sh3fNBAjfvMRrJ5b/11nkE\nOACb33WbLj03X48ijSDLHz7P/lHICa/ogRqCE1M2nQKBgQDuDZ2kvReXofZ1ZY2k\nCk3AYQdcxFs0O4veOORLWGlkJndrPI0SPq3NMlo8CM5+Pu28uMU8IqPlzgsEnpS1\nVGCmOmWU2k3jorXJMfSlD5YqH72okDyDNJNV7ZeY8nwiaAsSrxkg0rWJC+yA8yv/\nXHx++nBVO24/81x5q9+PMWbzswKBgQDt9ZBqGQd+YTvvAprY878+fqRis3dgNbWs\ncy1vUyeeVYUD+8wxdhdkdfwyxIRlBiTeMffuGqhvMw6qaeRW1fDFrCUN6N2uABbN\nJyTqPuvhMU8uccaET+hyHzX4YCwkbnmcoqWUEqRqvlGlmylW6mxqTw4gbkYablxX\nZsmo/QMK3QKBgQDKwfYftp89m8nbvB+kNNJ8pSgsL2KvXniHUlXAhxFdKBZW1EAj\n5hcKy3Rn5ehbRyYetBHqYmbO+WwRBzEKMVAQxXR4EGh/FrtXHqGNZXU1c8uKoy+n\nYUSMz81rjD2G4K9tvo3ckxvkGq/aNUSoQBIZ5R2Auxnwhkuhpm7H/AAAWQKBgGJA\npqRoOUPhehGyDaXO3wQ63j0yxPOguaa+19/DgfRKc2W1rhYuIHKGlN+RbOkZpFdq\nYmiZ8ToY5tFOb827AHNeJN6dbArQVpnWs9NUr6iH553RtJolNGEKqgooC5HvW59l\nOODu4ZyBgMzUSDlvCdzLT5Xscl2ve8lK07FG5t6xAoGBAKk29sgHLo7Z6Gqeo7Dl\n0+6HfPU9KFhqGSVRx9Dn1C3+G3ZKgYBcxWBaaByD+Qfwp8aez/ziKhdUMjhG+Jr4\nt+obAEt43MtWQZjARcIuq9dhJMIFHR3iKfjhCNMsFqoG2yZi9UVatuKR2WlZC8A3\nYzh1kZYXVpCvgC+eQc9r4Mvp\n-----END PRIVATE KEY-----\n"
+private_key_id = "YOUR_PRIVATE_KEY_ID"
+private_key = "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n"
 client_email = "nandatradingapp@tradeportfolioagent.iam.gserviceaccount.com"
-client_id = "115878850202951490125"
+client_id = "YOUR_CLIENT_ID"
 auth_uri = "https://accounts.google.com/o/oauth2/auth"
 token_uri = "https://oauth2.googleapis.com/token"
 auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
 client_x509_cert_url = "https://www.googleapis.com/robot/v1/metadata/x509/nandatradingapp%40tradeportfolioagent.iam.gserviceaccount.com"
 universe_domain = "googleapis.com"
+
+[questrade]
+chandu_token = "YOUR_CHANDU_QUESTRADE_REFRESH_TOKEN"
+# nandu_token = "YOUR_NANDU_QUESTRADE_REFRESH_TOKEN"  # uncomment when ready
 ```
 
-5. Click **Save** at the bottom
-6. Your app will **automatically restart** with the secrets loaded
+> ⚠️ **Never paste real keys into this file.** Add them only via the Streamlit Cloud UI.
+> Get `chandu_token` from `PortfolioReport/Config/ChanduAPITracker` on your Mac.
+> Get the GCP key from Google Cloud Console → Service Accounts → generate a new key (JSON).
+
+5. Click **Save** — app restarts automatically
+
+---
+
+## Step 3b: Repo Structure for Portfolio Tab
+
+The `PortfolioReport/` folder must be inside the GitHub repo alongside `dashboard.py`:
+
+```
+KrishnaKuteera/TradingAgent (repo root)
+├── dashboard.py
+├── requirements.txt
+├── PortfolioReport/
+│   ├── src/
+│   │   ├── questrade_api.py
+│   │   ├── config.py, utils.py, calc.py, data.py, report.py
+│   └── Config/           ← token files NOT committed (use secrets instead)
+└── ...
+```
+
+To add `PortfolioReport/` to the repo:
+```bash
+cd /path/to/TradingAgent-repo
+cp -r /Users/nandakumar/Documents/Nanda_Investment/PortfolioReport/src ./PortfolioReport/src
+# Do NOT copy Config/ (contains tokens)
+git add PortfolioReport/
+git commit -m "Add PortfolioReport module for portfolio tab"
+git push
+```
 
 ---
 

@@ -1,3 +1,4 @@
+import sys
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
@@ -9,6 +10,35 @@ import json
 import os
 import bcrypt
 import pytz
+
+# Portfolio report module (sibling project)
+# Works both locally (TradeAgent/ sibling of PortfolioReport/) and on Streamlit Cloud
+# (PortfolioReport/ copied into repo root alongside dashboard.py)
+_here = os.path.dirname(os.path.abspath(__file__))
+_portfolio_local = os.path.join(_here, '..', 'PortfolioReport')   # local dev
+_portfolio_cloud = os.path.join(_here, 'PortfolioReport')          # Streamlit Cloud
+sys.path.insert(0, _portfolio_local if os.path.isdir(_portfolio_local) else _portfolio_cloud)
+try:
+    from src.data import load_all_from_questrade, get_fx
+    from src.calc import get_all_symbols, load_sector_data, load_subsector_data, load_currency_overrides
+    from src.report import build_html
+    _PORTFOLIO_AVAILABLE = True
+except ImportError:
+    _PORTFOLIO_AVAILABLE = False
+
+PORTFOLIO_USER = "Nanda"
+
+def _setup_portfolio_tokens():
+    """Write Questrade tokens from st.secrets to /tmp/ for Streamlit Cloud."""
+    try:
+        if "questrade" in st.secrets:
+            from pathlib import Path
+            if "chandu_token" in st.secrets["questrade"]:
+                Path("/tmp/ChanduAPITracker").write_text(st.secrets["questrade"]["chandu_token"])
+            if "nandu_token" in st.secrets["questrade"]:
+                Path("/tmp/NanduAPITracker").write_text(st.secrets["questrade"]["nandu_token"])
+    except Exception:
+        pass
 
 # Page configuration
 st.set_page_config(
@@ -46,7 +76,7 @@ def get_gspread_client():
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
     try:
-        json_file = 'tradeportfolioagent-52f42fe31773.json'
+        json_file = 'tradeportfolioagent-8348ccf38790.json'
 
         # Try local JSON file first (for local development)
         if os.path.exists(json_file):
@@ -56,7 +86,7 @@ def get_gspread_client():
             creds_dict = st.secrets["gcp_service_account"]
             credentials = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
         else:
-            st.error("❌ Service account credentials not found. Please ensure tradeportfolioagent-52f42fe31773.json exists in this directory.")
+            st.error("❌ Service account credentials not found. Please ensure tradeportfolioagent-8348ccf38790.json exists in this directory.")
             st.stop()
     except Exception as e:
         st.error(f"❌ Authentication error: {str(e)}")
@@ -673,7 +703,12 @@ else:
         st.divider()
 
         # Additional Analysis Tabs
-        tab_canslim, tab_sectors, tab_performance = st.tabs(["📊 CANSLIM Analysis", "🏭 Sectors & Industries", "📈 Price Performance"])
+        is_nanda = st.session_state.get("username", "").lower() == PORTFOLIO_USER.lower()
+        tab_labels = ["📊 CANSLIM Analysis", "🏭 Sectors & Industries", "📈 Price Performance"]
+        if is_nanda:
+            tab_labels.append("💼 Portfolio")
+        tabs = st.tabs(tab_labels)
+        tab_canslim, tab_sectors, tab_performance = tabs[0], tabs[1], tabs[2]
 
         with tab_canslim:
             st.subheader("CANSLIM Breakdown - Stock Screening Indicators")
@@ -723,6 +758,40 @@ else:
                            })
             else:
                 st.warning("Unable to fetch price performance data")
+
+        if is_nanda:
+            with tabs[3]:
+                st.subheader("Portfolio Report")
+                if not _PORTFOLIO_AVAILABLE:
+                    st.error("Portfolio module not available — check PortfolioReport/src/ is accessible.")
+                else:
+                    if st.button("🔄 Refresh Portfolio", use_container_width=False):
+                        st.cache_data.clear()
+
+                    _setup_portfolio_tokens()
+                    with st.spinner("Fetching live data from Questrade..."):
+                        try:
+                            chandu_data, nandu_data, errors = load_all_from_questrade()
+                            fx = get_fx(chandu_data)
+
+                            for data in [chandu_data, nandu_data]:
+                                if "Positions" in data and not data["Positions"].empty:
+                                    pos_df = data["Positions"]
+                                    mask = ~pos_df["Equity Description"].str.upper().str.contains("DOLLAR|CASH", na=False)
+                                    data["Positions"] = pos_df[mask].reset_index(drop=True)
+
+                            symbols            = get_all_symbols(chandu_data, nandu_data)
+                            sector_data        = load_sector_data(symbols)
+                            subsector_data     = load_subsector_data()
+                            currency_overrides = load_currency_overrides()
+
+                            report_date = datetime.today().strftime("%d %b %Y")
+                            html = build_html(chandu_data, nandu_data, report_date, fx,
+                                              sector_data, subsector_data, currency_overrides, errors)
+
+                            st.components.v1.html(html, height=900, scrolling=True)
+                        except Exception as e:
+                            st.error(f"Failed to load portfolio: {e}")
 
         st.divider()
 

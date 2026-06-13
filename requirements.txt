@@ -8,3 +8,5 @@ yfinance==1.2.0
 pandas==2.3.3
 plotly==5.18.0
 bcrypt==4.1.2
+requests>=2.31.0
+openpyxl>=3.1.0
