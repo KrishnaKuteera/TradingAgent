@@ -192,7 +192,8 @@ def fetch_descriptions(symbols: list) -> dict:
     Returns {symbol: description}.
     """
     import json, time
-    cache_path = CONFIG_DIR / "description_cache.json"
+    # Use Config/ locally, /tmp/ on Streamlit Cloud
+    cache_path = CONFIG_DIR / "description_cache.json" if CONFIG_DIR.exists() else Path("/tmp/description_cache.json")
     cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
 
     to_fetch = [s for s in symbols if s not in cache]

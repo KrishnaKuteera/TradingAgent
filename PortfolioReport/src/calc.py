@@ -7,7 +7,11 @@ from typing import Optional
 import pandas as pd
 import yfinance as yf
 
+from pathlib import Path
 from .config import FOLDER, CONFIG_DIR, ACCOUNT_LABELS, YF_TICKER_MAP, SECTOR_NAMES
+
+# On Streamlit Cloud, Config/ doesn't exist — fall back to /tmp/ for writable cache
+_CFG = CONFIG_DIR if CONFIG_DIR.exists() else Path("/tmp")
 from .utils import safe_float, conv_cad, get_currency
 
 
@@ -62,7 +66,7 @@ def _yfin_fetch(symbol: str) -> Optional[dict]:
 
 def load_sector_data(symbols: list) -> dict:
     """Return {symbol: {sector: weight}}, fetching from yfinance for any not cached."""
-    cache_path     = CONFIG_DIR / "sector_cache.json"
+    cache_path     = _CFG       / "sector_cache.json"
     overrides_path = CONFIG_DIR / "sector_overrides.json"
 
     cache     = json.loads(cache_path.read_text())     if cache_path.exists()     else {}
