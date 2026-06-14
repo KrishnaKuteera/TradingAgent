@@ -1,5 +1,8 @@
 # Credentials
 *.json
+!PortfolioReport/Config/sector_overrides.json
+!PortfolioReport/Config/subsector_mapping.json
+!PortfolioReport/Config/currency_overrides.json
 .env
 *.key
 STREAMLIT_SECRETS.toml

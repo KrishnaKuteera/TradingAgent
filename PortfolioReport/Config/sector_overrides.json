@@ -1,0 +1,14 @@
+{
+  "CASH":  {"Cash": 1.0},
+  "GLD":   {"Commodities": 1.0},
+  "SOXX":  {"Semiconductors": 1.0},
+  "ZXLE":  {"Energy": 1.0},
+  "CGL.C": {"Commodities": 1.0},
+  "DRAM":  {"Semiconductors": 1.0},
+  "NASA":  {"Aerospace & Defense": 1.0},
+  "VOLT":  {"Industrials": 1.0},
+  "XSW":   {"Technology": 1.0},
+  "VOO":   null,
+  "VFV":   null,
+  "VIU":   null
+}

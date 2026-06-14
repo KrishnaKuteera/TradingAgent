@@ -1,0 +1,97 @@
+{
+  "_instructions": "Add ticker: 'subsector_name' pairs below. Unknown tickers fall back to main sector. Edit this file to add subsectors for new stocks without code changes.",
+
+  "SEMICONDUCTORS_MEMORY": {
+    "MU": "Memory Chips",
+    "WDC": "Storage/HDD",
+    "DRAM": "Memory ETF",
+    "SOXX": "Semiconductor ETF"
+  },
+
+  "SEMICONDUCTORS_EQUIPMENT": {
+    "LRCX": "Semiconductor Equipment",
+    "KLIC": "Semiconductor Equipment"
+  },
+
+  "SEMICONDUCTORS_LOGIC": {
+    "CRDO": "Logic Semiconductors",
+    "ALGM": "Analog Semiconductors",
+    "AXTI": "Semiconductor Materials",
+    "ADEA": "Semiconductors",
+    "MXL": "Mixed-Signal Semiconductors",
+    "SIMO": "Semiconductor Motion Control"
+  },
+
+  "SOFTWARE_ENTERPRISE": {
+    "MSFT": "Enterprise Software"
+  },
+
+  "SOFTWARE_NETWORKING": {
+    "CLFD": "Network Software"
+  },
+
+  "SOFTWARE_GENERAL": {
+    "XSW": "Software ETF"
+  },
+
+  "OPTICAL_COMMUNICATIONS": {
+    "LUMENTUM": "Optical Components",
+    "GLW": "Optical Fiber",
+    "LITE": "Optical Networking",
+    "AAOI": "Optical Components",
+    "FN": "Optical Networking"
+  },
+
+  "COMMUNICATIONS_INTERNET": {
+    "GOOGL": "Internet/Search"
+  },
+
+  "CLEAN_ENERGY": {
+    "BE": "Fuel Cells",
+    "BLDP": "Fuel Cells",
+    "VOLT": "Electrification ETF",
+    "LUNR": "Space Technology"
+  },
+
+  "DIVERSIFIED_ETF": {
+    "VOO": "Diversified (S&P 500)",
+    "VFV": "Diversified (S&P 500 CAD)",
+    "VIU": "Diversified (Intl Ex-USA)",
+    "CASH": "Cash/Money Market"
+  },
+
+  "COMMODITIES": {
+    "GLD": "Gold",
+    "CGL.C": "Gold"
+  },
+
+  "ENERGY_URANIUM": {
+    "CCJ": "Uranium",
+    "UUUU": "Uranium"
+  },
+
+  "ENERGY_OIL_GAS": {
+    "ZXLE": "Energy ETF"
+  },
+
+  "MATERIALS": {
+    "HBM": "Mining - Copper",
+    "ALM": "Mining - Rare Earth/Tungsten"
+  },
+
+  "HEALTHCARE": {
+    "LQDA": "Healthcare/Specialty Pharma"
+  },
+
+  "INDUSTRIALS_INFRASTRUCTURE": {
+    "VRT": "Data Center Infrastructure"
+  },
+
+  "AEROSPACE_DEFENSE": {
+    "NASA": "Space Technology ETF"
+  },
+
+  "CONSUMER": {
+    "WMT": "Retail"
+  }
+}
