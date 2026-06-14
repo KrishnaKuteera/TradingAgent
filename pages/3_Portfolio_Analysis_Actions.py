@@ -190,19 +190,24 @@ def _render_action_items(actions: list):
     this_week = [a for a in actions if a["urgency"] == "THIS WEEK"]
     monitor   = [a for a in actions if a["urgency"] == "MONITOR"]
 
-    cols = ["symbol", "account", "action", "signals", "values", "pl_pct"]
+    _hide = {"priority", "detail", "urgency", "_rules"}
+
+    def _show(items):
+        df = pd.DataFrame(items)
+        visible = [c for c in df.columns if c not in _hide]
+        st.dataframe(df[visible], use_container_width=True, hide_index=True)
 
     if immediate:
         st.error(f"🔴 {len(immediate)} IMMEDIATE action(s)")
-        st.dataframe(pd.DataFrame(immediate)[cols], use_container_width=True, hide_index=True)
+        _show(immediate)
 
     if this_week:
         st.warning(f"🟡 {len(this_week)} action(s) this week")
-        st.dataframe(pd.DataFrame(this_week)[cols], use_container_width=True, hide_index=True)
+        _show(this_week)
 
     if monitor:
         with st.expander(f"🔵 {len(monitor)} item(s) to monitor"):
-            st.dataframe(pd.DataFrame(monitor)[cols], use_container_width=True, hide_index=True)
+            _show(monitor)
 
 
 # ---------------------------------------------------------------------------
