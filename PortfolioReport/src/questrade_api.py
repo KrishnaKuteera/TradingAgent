@@ -12,9 +12,8 @@ import pandas as pd
 # Gist-based token store — keeps local file and cloud gist in sync
 # ---------------------------------------------------------------------------
 
-_GIST_ID    = "1bedc23f2daa0523457e63518d80c5c4"
-_GIST_FILE  = "ChanduAPITracker"
-_GIST_API   = f"https://api.github.com/gists/{_GIST_ID}"
+_GIST_ID  = "1bedc23f2daa0523457e63518d80c5c4"
+_GIST_API = f"https://api.github.com/gists/{_GIST_ID}"
 
 
 def _github_headers():
@@ -31,26 +30,28 @@ def _github_headers():
     return {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
 
 
-def _gist_read_token():
+def _gist_read_token(gist_filename: str):
     headers = _github_headers()
     if not headers:
         return None
     try:
         r = requests.get(_GIST_API, headers=headers, timeout=5)
         if r.status_code == 200:
-            return r.json()["files"][_GIST_FILE]["content"].strip()
+            files = r.json().get("files", {})
+            if gist_filename in files:
+                return files[gist_filename]["content"].strip()
     except Exception:
         pass
     return None
 
 
-def _gist_write_token(token: str) -> None:
+def _gist_write_token(gist_filename: str, token: str) -> None:
     headers = _github_headers()
     if not headers:
         return
     try:
         requests.patch(_GIST_API, headers=headers, timeout=5,
-                       json={"files": {_GIST_FILE: {"content": token}}})
+                       json={"files": {gist_filename: {"content": token}}})
     except Exception:
         pass
 
@@ -61,14 +62,15 @@ class QuestradeAPI:
 
         Token load priority: gist → local file.
         Token save: always writes to both gist and local file.
+        gist_filename is derived from the basename of refresh_token_file.
         """
         self.token_file = refresh_token_file
+        self.gist_filename = Path(refresh_token_file).name
 
         # Try gist first, fall back to local file
-        token = _gist_read_token()
+        token = _gist_read_token(self.gist_filename)
         if token:
-            print("  ✓ Token loaded from gist")
-            # Keep local file in sync
+            print(f"  ✓ Token loaded from gist ({self.gist_filename})")
             try:
                 Path(refresh_token_file).write_text(token)
             except Exception:
@@ -102,7 +104,7 @@ class QuestradeAPI:
 
         # Save rotated token to both gist (shared) and local file
         self.refresh_token = tokens['refresh_token']
-        _gist_write_token(self.refresh_token)
+        _gist_write_token(self.gist_filename, self.refresh_token)
         try:
             with open(self.token_file, 'w') as f:
                 f.write(self.refresh_token)
