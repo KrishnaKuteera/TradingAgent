@@ -60,6 +60,14 @@ _setup_tokens()
 with st.spinner("Fetching live data from Questrade..."):
     try:
         chandu_data, nandu_data, errors = load_all_from_questrade()
+
+        # Show stale-data banner if we fell back to snapshot
+        stale = [msg for person, msg in errors if person == "__stale__"]
+        if stale:
+            st.warning(f"⚠️ Live data unavailable — showing cached snapshot from {stale[0]}. "
+                       "Update the Questrade token in Streamlit secrets and refresh to get live data.")
+        errors = [(p, m) for p, m in errors if p != "__stale__"]
+
         fx = get_fx(chandu_data)
 
         for data in [chandu_data, nandu_data]:

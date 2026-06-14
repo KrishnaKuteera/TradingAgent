@@ -234,11 +234,60 @@ def _resolve_token(name: str) -> Path:
     return Path("/tmp") / name
 
 
+# ---------------------------------------------------------------------------
+# Portfolio snapshot cache (fallback when API is unreachable)
+# ---------------------------------------------------------------------------
+
+_SNAPSHOT_FILENAME = "portfolio_snapshot.json"
+
+
+def _snapshot_path() -> Path:
+    return CONFIG_DIR / _SNAPSHOT_FILENAME if CONFIG_DIR.exists() else Path("/tmp") / _SNAPSHOT_FILENAME
+
+
+def _save_snapshot(chandu_data: dict, nandu_data: dict) -> None:
+    import json
+    snapshot = {}
+    for label, data in [("chandu", chandu_data), ("nandu", nandu_data)]:
+        snapshot[label] = {
+            "Positions": data["Positions"].to_dict(orient="records") if not data["Positions"].empty else [],
+            "Balances":  data["Balances"].to_dict(orient="records")  if not data["Balances"].empty  else [],
+            "as_of":     datetime.now().strftime("%Y-%m-%d %H:%M"),
+        }
+    try:
+        _snapshot_path().write_text(json.dumps(snapshot))
+    except Exception as e:
+        print(f"Warning: Could not save portfolio snapshot: {e}")
+
+
+def _load_snapshot() -> tuple:
+    """Load last saved snapshot. Returns (chandu_data, nandu_data, as_of_str) or None."""
+    import json
+    path = _snapshot_path()
+    if not path.exists():
+        return None
+    try:
+        snapshot = json.loads(path.read_text())
+        result = {}
+        for label in ("chandu", "nandu"):
+            entry = snapshot.get(label, {})
+            result[label] = {
+                "Positions": pd.DataFrame(entry.get("Positions", [])),
+                "Balances":  pd.DataFrame(entry.get("Balances",  [])),
+            }
+        as_of = snapshot.get("chandu", {}).get("as_of", "unknown time")
+        return result["chandu"], result["nandu"], as_of
+    except Exception as e:
+        print(f"Warning: Could not read portfolio snapshot: {e}")
+        return None
+
+
 def load_all_from_questrade() -> tuple:
     """Fetch all account data from Questrade.
 
     Returns (chandu_data, nandu_data, errors).
     errors is a list of (person, message) tuples for any fetch failures.
+    If the API is unreachable, falls back to the last saved snapshot.
     """
     chandu_data: dict = {}
     nandu_data:  dict = {}
@@ -281,6 +330,19 @@ def load_all_from_questrade() -> tuple:
         print("NanduAPITracker not configured, skipping Nandu's data")
         errors.append(("Nandu", "NanduAPITracker not configured — add Nandu's Questrade refresh token to enable"))
 
+    # If API failed for everyone, try snapshot fallback
+    api_failed_persons = {p for p, _ in errors}
+    if "Chandu" in api_failed_persons and not chandu_data:
+        cached = _load_snapshot()
+        if cached:
+            chandu_fallback, nandu_fallback, as_of = cached
+            print(f"Using cached snapshot from {as_of}")
+            chandu_data = chandu_fallback
+            nandu_data  = nandu_data or nandu_fallback
+            errors.append(("__stale__", as_of))
+        else:
+            chandu_data = _empty_portfolio()
+
     chandu_data = chandu_data or _empty_portfolio()
     nandu_data  = nandu_data  or _empty_portfolio()
 
@@ -295,6 +357,10 @@ def load_all_from_questrade() -> tuple:
         desc_map = fetch_descriptions(list(set(all_symbols)))
         _apply_descriptions(chandu_data, desc_map)
         _apply_descriptions(nandu_data,  desc_map)
+
+    # Save snapshot only after a fully live fetch (no auth errors)
+    if not api_failed_persons or api_failed_persons == {"Nandu"}:
+        _save_snapshot(chandu_data, nandu_data)
 
     return chandu_data, nandu_data, errors
 
