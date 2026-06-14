@@ -277,10 +277,15 @@ with tab_rules:
         st.warning("Rules not available. Check that the **Rules** tab exists in StockTracker.")
 
 with tab_analysis:
-    col1, col2 = st.columns([1, 5])
+    col1, col2, col3 = st.columns([1, 1, 4])
     with col1:
         run_btn = st.button("▶️ Run Analysis", type="primary", use_container_width=True)
     with col2:
+        if st.button("🗑️ Clear", use_container_width=True):
+            st.session_state.pop("signals_result", None)
+            st.session_state.pop("signals_ts", None)
+            st.rerun()
+    with col3:
         if "signals_ts" in st.session_state:
             st.caption(f"Last run: {st.session_state['signals_ts']}")
 
