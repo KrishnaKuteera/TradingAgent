@@ -3,18 +3,82 @@
 
 import requests
 import json
+import os
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
 
+# ---------------------------------------------------------------------------
+# Gist-based token store — keeps local file and cloud gist in sync
+# ---------------------------------------------------------------------------
+
+_GIST_ID    = "1bedc23f2daa0523457e63518d80c5c4"
+_GIST_FILE  = "ChanduAPITracker"
+_GIST_API   = f"https://api.github.com/gists/{_GIST_ID}"
+
+
+def _github_headers():
+    """Return auth headers using GITHUB_GIST_TOKEN env var or st.secrets fallback."""
+    token = os.environ.get("GITHUB_GIST_TOKEN")
+    if not token:
+        try:
+            import streamlit as st
+            token = st.secrets.get("github", {}).get("gist_token")
+        except Exception:
+            pass
+    if not token:
+        return None
+    return {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+
+
+def _gist_read_token():
+    headers = _github_headers()
+    if not headers:
+        return None
+    try:
+        r = requests.get(_GIST_API, headers=headers, timeout=5)
+        if r.status_code == 200:
+            return r.json()["files"][_GIST_FILE]["content"].strip()
+    except Exception:
+        pass
+    return None
+
+
+def _gist_write_token(token: str) -> None:
+    headers = _github_headers()
+    if not headers:
+        return
+    try:
+        requests.patch(_GIST_API, headers=headers, timeout=5,
+                       json={"files": {_GIST_FILE: {"content": token}}})
+    except Exception:
+        pass
+
 
 class QuestradeAPI:
     def __init__(self, refresh_token_file: str = "ChanduAPITracker"):
-        """Initialize API client with refresh token."""
-        self.token_file = refresh_token_file
-        with open(refresh_token_file, 'r') as f:
-            self.refresh_token = f.read().strip()
+        """Initialize API client with refresh token.
 
+        Token load priority: gist → local file.
+        Token save: always writes to both gist and local file.
+        """
+        self.token_file = refresh_token_file
+
+        # Try gist first, fall back to local file
+        token = _gist_read_token()
+        if token:
+            print("  ✓ Token loaded from gist")
+            # Keep local file in sync
+            try:
+                Path(refresh_token_file).write_text(token)
+            except Exception:
+                pass
+        else:
+            with open(refresh_token_file, 'r') as f:
+                token = f.read().strip()
+            print("  ✓ Token loaded from local file")
+
+        self.refresh_token = token
         self.access_token = None
         self.api_server = None
         self.accounts = {}
@@ -36,10 +100,14 @@ class QuestradeAPI:
         self.access_token = tokens['access_token']
         self.api_server = tokens['api_server']
 
-        # IMPORTANT: Save the new refresh token for next time
+        # Save rotated token to both gist (shared) and local file
         self.refresh_token = tokens['refresh_token']
-        with open(self.token_file, 'w') as f:
-            f.write(self.refresh_token)
+        _gist_write_token(self.refresh_token)
+        try:
+            with open(self.token_file, 'w') as f:
+                f.write(self.refresh_token)
+        except Exception:
+            pass
 
         print("✓ Authenticated with Questrade API")
 
