@@ -17,16 +17,12 @@ if st.session_state.get("username", "").lower() != PORTFOLIO_USER.lower():
     st.error("Access denied.")
     st.stop()
 
-# --- Portfolio module path ---
+# --- Portfolio module path (must be first in sys.path so 'src' resolves here) ---
 _here            = os.path.dirname(os.path.abspath(__file__))
 _portfolio_local = os.path.join(_here, '..', '..', 'PortfolioReport')
 _portfolio_cloud = os.path.join(_here, '..', 'PortfolioReport')
-sys.path.insert(0, _portfolio_local if os.path.isdir(_portfolio_local) else _portfolio_cloud)
-
-# --- TradeAgent src path (for rules_sheet) ---
-_ta_local = os.path.join(_here, '..')
-if _ta_local not in sys.path:
-    sys.path.insert(0, _ta_local)
+_portfolio_path  = _portfolio_local if os.path.isdir(_portfolio_local) else _portfolio_cloud
+sys.path.insert(0, _portfolio_path)
 
 try:
     from src.data    import load_all_from_questrade, get_fx
@@ -37,10 +33,17 @@ except ImportError as e:
     st.error(f"Portfolio module not available: {e}")
     st.stop()
 
+# --- Load rules_sheet via explicit path to avoid src/ package collision ---
 try:
-    from src.rules_sheet import fetch_rules, save_rule
+    import importlib.util
+    _rules_path = os.path.join(_here, '..', 'src', 'rules_sheet.py')
+    _spec       = importlib.util.spec_from_file_location("rules_sheet", _rules_path)
+    _rules_mod  = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_rules_mod)
+    fetch_rules = _rules_mod.fetch_rules
+    save_rule   = _rules_mod.save_rule
     _rules_available = True
-except ImportError:
+except Exception:
     _rules_available = False
 
 
