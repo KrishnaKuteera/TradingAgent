@@ -597,24 +597,50 @@ def build_holdings_table(chandu_data: dict, nandu_data: dict,
 # ---------------------------------------------------------------------------
 
 def build_action_items(holdings: list) -> list:
-    """Flatten all rule failures/warnings into a prioritised action list."""
-    items = []
+    """One row per (symbol, account) showing worst urgency + all triggered rules."""
     priority_map = {"IMMEDIATE": 1, "THIS WEEK": 2, "MONITOR": 3, "NONE": 4}
+    grouped: dict = {}
 
     for h in holdings:
-        for r in h["rule_results"]:
-            if r["status"] in (FAIL, WARN) and r.get("action"):
-                items.append({
-                    "priority":   priority_map.get(r["urgency"], 4),
-                    "urgency":    r["urgency"],
-                    "symbol":     h["symbol"],
-                    "account":    h["account"],
-                    "action":     r["action"],
-                    "rule":       r["name"],
-                    "value":      r["value"],
-                    "detail":     r["detail"],
-                    "pl_pct":     h["pl_pct"],
-                })
+        key = (h["symbol"], h["account"])
+        fired = [r for r in h["rule_results"] if r["status"] in (FAIL, WARN) and r.get("action")]
+        if not fired:
+            continue
+        worst = min(fired, key=lambda r: priority_map.get(r["urgency"], 4))
+        if key not in grouped:
+            grouped[key] = {
+                "priority": priority_map.get(worst["urgency"], 4),
+                "urgency":  worst["urgency"],
+                "symbol":   h["symbol"],
+                "account":  h["account"],
+                "pl_pct":   h["pl_pct"],
+                "_rules":   fired,
+            }
+        else:
+            existing = grouped[key]
+            if priority_map.get(worst["urgency"], 4) < existing["priority"]:
+                existing["priority"] = priority_map.get(worst["urgency"], 4)
+                existing["urgency"]  = worst["urgency"]
+            existing["_rules"].extend(fired)
+
+    items = []
+    for (sym, acct), g in grouped.items():
+        rules  = g["_rules"]
+        action = " / ".join(dict.fromkeys(r["action"] for r in rules if r.get("action")))
+        names  = ", ".join(dict.fromkeys(r["name"]   for r in rules))
+        detail = " | ".join(r["detail"] for r in rules if r.get("detail"))
+        values = ", ".join(f"{r['name']}: {r['value']}" for r in rules)
+        items.append({
+            "priority": g["priority"],
+            "urgency":  g["urgency"],
+            "symbol":   sym,
+            "account":  acct,
+            "action":   action,
+            "signals":  names,
+            "values":   values,
+            "detail":   detail,
+            "pl_pct":   g["pl_pct"],
+        })
 
     items.sort(key=lambda x: (x["priority"], x["symbol"]))
     return items

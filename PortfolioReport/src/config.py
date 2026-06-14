@@ -44,10 +44,11 @@ SECTOR_COLORS = {
 
 # yfinance uses different ticker symbols for some Canadian listings
 YF_TICKER_MAP = {
-    "VFV":   "VFV.TO",
-    "VIU":   "VIU.TO",
-    "CGL.C": "CGL-C.TO",
-    "ZXLE":  "ZXLE.TO",
+    "VFV":      "VFV.TO",
+    "VIU":      "VIU.TO",
+    "CGL.C":    "CGL-C.TO",
+    "CGL.C.TO": "CGL-C.TO",
+    "ZXLE":     "ZXLE.TO",
 }
 
 # Symbols always classified as ETF regardless of suffix
