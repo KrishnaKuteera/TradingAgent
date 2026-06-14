@@ -190,7 +190,7 @@ def _render_action_items(actions: list):
     this_week = [a for a in actions if a["urgency"] == "THIS WEEK"]
     monitor   = [a for a in actions if a["urgency"] == "MONITOR"]
 
-    cols = ["symbol", "account", "action", "rule", "value", "detail"]
+    cols = ["symbol", "account", "action", "signals", "values", "pl_pct"]
 
     if immediate:
         st.error(f"🔴 {len(immediate)} IMMEDIATE action(s)")
@@ -317,18 +317,18 @@ with tab_analysis:
         holdings = result.get("holdings", [])
         actions  = result.get("actions",  [])
 
-        # Action items
-        st.header("🎯 Action Items")
-        _render_action_items(actions)
+        # Holdings matrix first
+        st.header("📋 Holdings — All Rules")
+        if holdings:
+            _render_holdings_matrix(holdings, rules)
+        else:
+            st.info("No holdings found.")
 
         st.divider()
 
-        # Holdings matrix
-        st.header("📋 Holdings — All Rules")
-        if rules:
-            _render_holdings_matrix(holdings, rules)
-        else:
-            st.info("No rules loaded.")
+        # Action items
+        st.header("🎯 Action Items")
+        _render_action_items(actions)
 
         st.divider()
 
