@@ -240,24 +240,14 @@ def _render_holdings_table(holdings: list, rules: list):
 
             if rows:
                 import pandas as pd
-                df = pd.DataFrame(rows)
-
-                def _row_style(row):
-                    s = row["_status"]
-                    if s == "FAIL":
-                        return ["background-color: #f8d7da"] * len(row)
-                    if s == "WARN":
-                        return ["background-color: #fff3cd"] * len(row)
-                    return [""] * len(row)
-
-                display_df = df[["Rule", "Status", "Value", "Action", "Urgency"]].copy()
-                st.dataframe(
-                    display_df.style.apply(
-                        lambda row: _row_style(df.loc[row.name]), axis=1
-                    ),
-                    use_container_width=True,
-                    hide_index=True,
-                )
+                display_df = pd.DataFrame([{
+                    "Rule":    r["Rule"],
+                    "Status":  r["Status"],
+                    "Value":   r["Value"],
+                    "Action":  r["Action"],
+                    "Urgency": r["Urgency"],
+                } for r in rows])
+                st.dataframe(display_df, use_container_width=True, hide_index=True)
 
                 # Show details for failures/warnings
                 alerts = [r for r in rows if r["_status"] in ("FAIL", "WARN") and r["_detail"]]
