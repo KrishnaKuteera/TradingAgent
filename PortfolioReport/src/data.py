@@ -192,9 +192,18 @@ def fetch_descriptions(symbols: list) -> dict:
     Returns {symbol: description}.
     """
     import json, time
-    # Use Config/ locally, /tmp/ on Streamlit Cloud
-    cache_path = CONFIG_DIR / "description_cache.json" if CONFIG_DIR.exists() else Path("/tmp/description_cache.json")
-    cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
+
+    def _writable_cache_path():
+        for candidate in [CONFIG_DIR / "description_cache.json", Path("/tmp/description_cache.json")]:
+            try:
+                candidate.write_text(candidate.read_text() if candidate.exists() else "{}")
+                return candidate
+            except Exception:
+                continue
+        return None
+
+    cache_path = _writable_cache_path()
+    cache = json.loads(cache_path.read_text()) if (cache_path and cache_path.exists()) else {}
 
     to_fetch = [s for s in symbols if s not in cache]
     if to_fetch:
@@ -208,7 +217,11 @@ def fetch_descriptions(symbols: list) -> dict:
             except Exception:
                 cache[sym] = sym
             time.sleep(0.2)
-        cache_path.write_text(json.dumps(cache, indent=2))
+        if cache_path:
+            try:
+                cache_path.write_text(json.dumps(cache, indent=2))
+            except Exception:
+                pass
 
     return cache
 

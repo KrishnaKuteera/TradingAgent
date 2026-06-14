@@ -10,8 +10,17 @@ import yfinance as yf
 from pathlib import Path
 from .config import FOLDER, CONFIG_DIR, ACCOUNT_LABELS, YF_TICKER_MAP, SECTOR_NAMES
 
-# On Streamlit Cloud, Config/ doesn't exist — fall back to /tmp/ for writable cache
-_CFG = CONFIG_DIR if CONFIG_DIR.exists() else Path("/tmp")
+def _writable_dir():
+    """Return a writable directory for cache files — Config/ locally, /tmp/ on read-only cloud."""
+    try:
+        test = CONFIG_DIR / ".write_test"
+        test.write_text("x")
+        test.unlink()
+        return CONFIG_DIR
+    except Exception:
+        return Path("/tmp")
+
+_CFG = _writable_dir()
 from .utils import safe_float, conv_cad, get_currency
 
 
@@ -81,7 +90,10 @@ def load_sector_data(symbols: list) -> dict:
         for sym in to_fetch:
             cache[sym] = _yfin_fetch(sym)
             time.sleep(0.3)
-        cache_path.write_text(json.dumps(cache, indent=2))
+        try:
+            cache_path.write_text(json.dumps(cache, indent=2))
+        except Exception:
+            pass
 
     sector_data: dict = {}
     for sym in symbols:
