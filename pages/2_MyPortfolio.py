@@ -186,75 +186,54 @@ def _render_holdings_table(holdings: list, rules: list):
         st.info("No holdings to display.")
         return
 
+    import pandas as pd
+
     auto_rules = [r for r in rules if r.get("enabled") and r.get("automatable")]
 
-    for h in sorted(holdings, key=lambda x: (x["worst_urgency"] == "NONE",
-                                              {"IMMEDIATE": 0, "THIS WEEK": 1,
-                                               "MONITOR": 2, "NONE": 3}.get(x["worst_urgency"], 4),
-                                              x["symbol"])):
+    # Sort holdings: IMMEDIATE first, then THIS WEEK, MONITOR, NONE
+    urgency_order = {"IMMEDIATE": 0, "THIS WEEK": 1, "MONITOR": 2, "NONE": 3}
+    sorted_holdings = sorted(holdings, key=lambda x: (urgency_order.get(x["worst_urgency"], 3), x["symbol"]))
 
-        urgency   = h["worst_urgency"]
-        bg_color  = URGENCY_COLOR.get(urgency, "#f8f9fa")
-        badge     = URGENCY_BADGE.get(urgency, "")
-        pl_color  = "green" if h["pl_pct"] >= 0 else "red"
+    # Build one row per stock, one column per rule
+    matrix_rows = []
+    for h in sorted_holdings:
+        rule_map = {r["rule_id"]: r for r in h["rule_results"]}
+        row = {
+            "Alert":    URGENCY_BADGE.get(h["worst_urgency"], "") or "✅ OK",
+            "Symbol":   h["symbol"],
+            "Account":  h["account"],
+            "P&L %":   f"{h['pl_pct']:+.1f}%",
+            "Price":    f"${h['current_price']:.2f}",
+            "Trend":    h["trend"],
+        }
+        for rule in auto_rules:
+            res  = rule_map.get(rule["rule_id"])
+            if res:
+                icon = STATUS_ICON.get(res["status"], "—")
+                row[rule["name"]] = f"{icon} {res['value']}"
+            else:
+                row[rule["name"]] = "—"
+        matrix_rows.append(row)
 
-        with st.expander(
-            f"{badge}  **{h['symbol']}** — {h['account']}  |  "
-            f"P&L: <span style='color:{pl_color}'>{h['pl_pct']:+.1f}%</span>  |  "
-            f"{h['trend']}",
-            expanded=(urgency in ("IMMEDIATE", "THIS WEEK"))
-        ):
-            # Summary row
-            c1, c2, c3, c4, c5, c6 = st.columns(6)
-            c1.metric("Price",      f"${h['current_price']:.2f}")
-            c2.metric("Cost Basis", f"${h['cost_basis']:.2f}")
-            c3.metric("P&L %",      f"{h['pl_pct']:+.1f}%")
-            c4.metric("RS Rating",  str(h['rs_rating']) if h['rs_rating'] else "—")
-            c5.metric("50-SMA",     f"${h['sma50']:.2f}"  if h['sma50']  else "—")
-            c6.metric("200-SMA",    f"${h['sma200']:.2f}" if h['sma200'] else "—")
+    if matrix_rows:
+        matrix_df = pd.DataFrame(matrix_rows)
+        st.dataframe(matrix_df, use_container_width=True, hide_index=True)
 
-            if h.get("data_error"):
-                st.warning(f"⚠️ Live data error: {h['data_error']}")
-
-            st.markdown("**Rule Evaluation**")
-
-            # Build results table
-            rule_map = {r["rule_id"]: r for r in h["rule_results"]}
-            rows = []
-            for rule in auto_rules:
-                res = rule_map.get(rule["rule_id"])
-                if not res:
-                    continue
-                icon   = STATUS_ICON.get(res["status"], "—")
-                action = res.get("action") or ""
-                detail = res.get("detail") or ""
-                rows.append({
-                    "Rule":    rule["name"],
-                    "Status":  f"{icon} {res['status']}",
-                    "Value":   res["value"],
-                    "Action":  action,
-                    "Urgency": res["urgency"] if res["urgency"] != "NONE" else "",
-                    "_detail": detail,
-                    "_status": res["status"],
-                })
-
-            if rows:
-                import pandas as pd
-                display_df = pd.DataFrame([{
-                    "Rule":    r["Rule"],
-                    "Status":  r["Status"],
-                    "Value":   r["Value"],
-                    "Action":  r["Action"],
-                    "Urgency": r["Urgency"],
-                } for r in rows])
-                st.dataframe(display_df, use_container_width=True, hide_index=True)
-
-                # Show details for failures/warnings
-                alerts = [r for r in rows if r["_status"] in ("FAIL", "WARN") and r["_detail"]]
-                if alerts:
-                    for a in alerts:
-                        icon = "🔴" if a["_status"] == "FAIL" else "🟡"
-                        st.caption(f"{icon} **{a['Rule']}:** {a['_detail']}")
+    # Detail callouts for any FAIL/WARN
+    st.markdown("**Signals Detail**")
+    has_alerts = False
+    for h in sorted_holdings:
+        alerts = [r for r in h["rule_results"]
+                  if r["status"] in ("FAIL", "WARN") and r.get("detail")]
+        if alerts:
+            has_alerts = True
+            st.markdown(f"**{h['symbol']}** — {h['account']}")
+            for a in alerts:
+                icon = "🔴" if a["status"] == "FAIL" else "🟡"
+                urgency_tag = f" `{a['urgency']}`" if a["urgency"] != "NONE" else ""
+                st.caption(f"{icon}{urgency_tag} **{a['name']}:** {a['detail']}")
+    if not has_alerts:
+        st.caption("No active signals.")
 
 
 # ---------------------------------------------------------------------------
