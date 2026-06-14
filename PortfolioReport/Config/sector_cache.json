@@ -1,0 +1,168 @@
+{
+  "AAOI": {
+    "Technology": 1.0
+  },
+  "ADEA": {
+    "Technology": 1.0
+  },
+  "ALGM": {
+    "Technology": 1.0
+  },
+  "ALM": {
+    "Basic Materials": 1.0
+  },
+  "AVGO": {
+    "Technology": 1.0
+  },
+  "AXTI": {
+    "Technology": 1.0
+  },
+  "BE": {
+    "Industrials": 1.0
+  },
+  "BLDP": {
+    "Industrials": 1.0
+  },
+  "CCJ": {
+    "Energy": 1.0
+  },
+  "CLFD": {
+    "Technology": 1.0
+  },
+  "CRDO": {
+    "Technology": 1.0
+  },
+  "FN": {
+    "Technology": 1.0
+  },
+  "GLW": {
+    "Technology": 1.0
+  },
+  "GOOGL": {
+    "Communication Services": 1.0
+  },
+  "HBM": {
+    "Basic Materials": 1.0
+  },
+  "KLIC": {
+    "Technology": 1.0
+  },
+  "LITE": {
+    "Technology": 1.0
+  },
+  "LQDA": {
+    "Healthcare": 1.0
+  },
+  "LRCX": {
+    "Technology": 1.0
+  },
+  "LUNR": {
+    "Industrials": 1.0
+  },
+  "MSFT": {
+    "Technology": 1.0
+  },
+  "MU": {
+    "Technology": 1.0
+  },
+  "MXL": {
+    "Technology": 1.0
+  },
+  "SIMO": {
+    "Technology": 1.0
+  },
+  "UUUU": {
+    "Energy": 1.0
+  },
+  "VPG": {
+    "Technology": 1.0
+  },
+  "VRT": {
+    "Industrials": 1.0
+  },
+  "WDC": {
+    "Technology": 1.0
+  },
+  "WMT": {
+    "Consumer Defensive": 1.0
+  },
+  "VFV": {
+    "Real Estate": 0.019199999479999987,
+    "Consumer Cyclical": 0.10160000254000005,
+    "Basic Materials": 0.01780000044500001,
+    "Consumer Defensive": 0.04900000322500008,
+    "Technology": 0.35669997891749944,
+    "Communication Services": 0.11250000281250007,
+    "Financial Services": 0.11640000291000008,
+    "Utilities": 0.023500000587500014,
+    "Industrials": 0.0831000080775002,
+    "Energy": 0.03509999887749997,
+    "Healthcare": 0.08510000212750005
+  },
+  "VIU": {
+    "Real Estate": 0.028797121259076967,
+    "Consumer Cyclical": 0.07979202071813615,
+    "Basic Materials": 0.06439356057954848,
+    "Consumer Defensive": 0.06139386055255088,
+    "Technology": 0.14428557129858458,
+    "Communication Services": 0.03809619034286952,
+    "Financial Services": 0.21817818196362546,
+    "Utilities": 0.03419658030777264,
+    "Industrials": 0.20167983181513863,
+    "Energy": 0.036896310332070484,
+    "Healthcare": 0.09229077083062616
+  },
+  "VOO": {
+    "Real Estate": 0.019199999479999987,
+    "Consumer Cyclical": 0.10160000254000005,
+    "Basic Materials": 0.01780000044500001,
+    "Consumer Defensive": 0.04900000322500008,
+    "Technology": 0.35669997891749944,
+    "Communication Services": 0.11250000281250007,
+    "Financial Services": 0.11640000291000008,
+    "Utilities": 0.023500000587500014,
+    "Industrials": 0.0831000080775002,
+    "Energy": 0.03509999887749997,
+    "Healthcare": 0.08510000212750005
+  },
+  "VSH": {
+    "Technology": 1.0
+  },
+  "8200010": null,
+  "SPY17Jul26P620.00": null,
+  "VFV.TO": {
+    "Real Estate": 0.019199999479999987,
+    "Consumer Cyclical": 0.10160000254000005,
+    "Basic Materials": 0.01780000044500001,
+    "Consumer Defensive": 0.04900000322500008,
+    "Technology": 0.35669997891749944,
+    "Communication Services": 0.11250000281250007,
+    "Financial Services": 0.11640000291000008,
+    "Utilities": 0.023500000587500014,
+    "Industrials": 0.0831000080775002,
+    "Energy": 0.03509999887749997,
+    "Healthcare": 0.08510000212750005
+  },
+  "ZXLE.TO": {
+    "Energy": 1.0
+  },
+  "AMKR": {
+    "Technology": 1.0
+  },
+  "RKLB": {
+    "Industrials": 1.0
+  },
+  "VIU.TO": {
+    "Real Estate": 0.028797121259076967,
+    "Consumer Cyclical": 0.07979202071813615,
+    "Basic Materials": 0.06439356057954848,
+    "Consumer Defensive": 0.06139386055255088,
+    "Technology": 0.14428557129858458,
+    "Communication Services": 0.03809619034286952,
+    "Financial Services": 0.21817818196362546,
+    "Utilities": 0.03419658030777264,
+    "Industrials": 0.20167983181513863,
+    "Energy": 0.036896310332070484,
+    "Healthcare": 0.09229077083062616
+  }
+}

@@ -3,6 +3,8 @@
 !PortfolioReport/Config/sector_overrides.json
 !PortfolioReport/Config/subsector_mapping.json
 !PortfolioReport/Config/currency_overrides.json
+!PortfolioReport/Config/sector_cache.json
+!PortfolioReport/Config/description_cache.json
 .env
 *.key
 STREAMLIT_SECRETS.toml
