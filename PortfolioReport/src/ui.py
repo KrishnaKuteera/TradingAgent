@@ -382,6 +382,27 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
 
     rules_lookup = {r["rule_id"]: r for r in rules}
 
+    # Data source links
+    st.markdown(
+        "**Data sources:** "
+        "[Yahoo Finance](https://finance.yahoo.com) · "
+        "[Financial Modeling Prep](https://financialmodelingprep.com) · "
+        "[O'Neil / IBD Methodology](https://www.investors.com/ibd-university/can-slim/)  &nbsp;|&nbsp; "
+        "Click any row to open full CAN SLIM detail. "
+        "Stock name links to [TradingView](https://www.tradingview.com).",
+        unsafe_allow_html=False,
+    )
+
+    # Market banner — same for every stock, show once at top
+    any_h = holdings[0] if holdings else None
+    if any_h:
+        market_r = next((r for r in any_h["rule_results"] if r["rule_id"] == "canslim_m"), None)
+        if market_r:
+            icon = STATUS_ICON.get(market_r["status"], "—")
+            val  = market_r["value"]
+            detail = market_r.get("detail", "")
+            st.info(f"**Market (M):** {icon} {val}{'  —  ' + detail if detail else ''}", icon="🌍")
+
     # Augment each holding with verdict + scores
     enriched = []
     for h in holdings:
@@ -400,7 +421,7 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
             "_sell_total":  st_,
         })
 
-    # Sort: urgency first, then buy score desc
+    # Sort: urgency first, then verdict order, then buy score desc
     enriched.sort(key=lambda h: (
         URGENCY_ORDER.get(h["worst_urgency"], 3),
         h["_sort"],
@@ -408,20 +429,18 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
         h["symbol"],
     ))
 
-    # Build display DataFrame
-    def _market_str(h):
-        r = next((r for r in h["rule_results"] if r["rule_id"] == "canslim_m"), None)
-        return (STATUS_ICON.get(r["status"], "—") + " " + r["value"].split("|")[0].strip()[:30]) if r else "—"
-
+    # Build display DataFrame — column order: Stock | Verdict | Buy | Sell | [Account | P&L] | Reason
     rows = []
     for h in enriched:
+        sym   = h["symbol"].split(".")[0]  # strip .TO etc for cleaner display
+        tv_url = f"https://www.tradingview.com/chart/?symbol={h['symbol'].replace('.TO', ':TSX').replace('.', ':')}"
         row = {
-            "Stock":      f"{h['symbol']}  {_fmt_price(h['current_price'])}",
-            "Verdict":    h["_label"],
-            "Reason":     h["_reason"][:80],
-            "Market":     _market_str(h),
-            "Buy":        f"{h['_buy_pass']}/{h['_buy_total']}",
-            "Sell":       f"{h['_sell_fail']}/{h['_sell_total']}",
+            "Stock":   f"{h['symbol']}  {_fmt_price(h['current_price'])}",
+            "TV":      tv_url,
+            "Verdict": h["_label"],
+            "Buy ✓":   f"{h['_buy_pass']}/{h['_buy_total']}",
+            "Sell ✗":  f"{h['_sell_fail']}/{h['_sell_total']}",
+            "Reason":  h["_reason"],  # full text, let it wrap
         }
         if show_account:
             row["Account"] = h["account"]
@@ -430,16 +449,23 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
 
     df = pd.DataFrame(rows)
 
+    # Column order
+    base_cols = ["Stock", "TV", "Verdict", "Buy ✓", "Sell ✗"]
+    if show_account:
+        base_cols += ["Account", "P&L"]
+    base_cols.append("Reason")
+    df = df[base_cols]
+
     col_cfg = {
-        "Stock":   st.column_config.TextColumn("Stock",   width="small"),
-        "Verdict": st.column_config.TextColumn("Verdict", width="medium"),
-        "Reason":  st.column_config.TextColumn("Reason",  width="large"),
-        "Market":  st.column_config.TextColumn("Market",  width="medium"),
-        "Buy":     st.column_config.TextColumn("Buy ✓",   width="small"),
-        "Sell":    st.column_config.TextColumn("Sell ✗",  width="small"),
+        "Stock":   st.column_config.TextColumn("Stock",    width="medium"),
+        "TV":      st.column_config.LinkColumn("📈 Chart", width="small", display_text="TradingView"),
+        "Verdict": st.column_config.TextColumn("Verdict",  width="small"),
+        "Buy ✓":   st.column_config.TextColumn("Buy ✓",    width="small"),
+        "Sell ✗":  st.column_config.TextColumn("Sell ✗",   width="small"),
+        "Reason":  st.column_config.TextColumn("Reason",   width="large"),
     }
     if show_account:
-        col_cfg["Account"] = st.column_config.TextColumn("Account", width="medium")
+        col_cfg["Account"] = st.column_config.TextColumn("Account", width="small")
         col_cfg["P&L"]     = st.column_config.TextColumn("P&L",     width="small")
 
     sel = st.dataframe(
@@ -463,7 +489,9 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
     if selected_sym:
         match = next((h for h in enriched if h["symbol"] == selected_sym), None)
         if match:
+            tv_url = f"https://www.tradingview.com/chart/?symbol={match['symbol'].replace('.TO', ':TSX').replace('.', ':')}"
             _render_detail(match, rules_lookup)
+            st.markdown(f"[Open {match['symbol']} on TradingView ↗]({tv_url})")
     else:
         st.caption("Click any row to see the full CAN SLIM breakdown and signals for that stock.")
 
