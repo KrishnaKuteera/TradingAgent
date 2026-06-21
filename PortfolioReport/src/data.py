@@ -186,42 +186,31 @@ def _empty_portfolio() -> dict:
 
 
 def fetch_descriptions(symbols: list) -> dict:
-    """Fetch company/fund long names from yfinance for a list of symbols.
+    """Fetch company/fund long names. Uses FMP first, falls back to cached values.
 
-    Results are cached in Config/description_cache.json to avoid repeat lookups.
     Returns {symbol: description}.
     """
-    import json, time
+    import json
+    from .fmp import fetch_profiles
 
-    def _writable_cache_path():
-        for candidate in [CONFIG_DIR / "description_cache.json", Path("/tmp/description_cache.json")]:
-            try:
-                candidate.write_text(candidate.read_text() if candidate.exists() else "{}")
-                return candidate
-            except Exception:
-                continue
-        return None
-
-    cache_path = _writable_cache_path()
-    cache = json.loads(cache_path.read_text()) if (cache_path and cache_path.exists()) else {}
+    # Load existing cache (committed to repo — always readable)
+    cache_path = CONFIG_DIR / "description_cache.json"
+    cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
 
     to_fetch = [s for s in symbols if s not in cache]
     if to_fetch:
-        print(f"  Fetching descriptions for: {', '.join(to_fetch)}")
+        print(f"  Fetching descriptions via FMP for: {', '.join(to_fetch)}")
+        profiles = fetch_profiles(to_fetch)
         for sym in to_fetch:
+            cache[sym] = profiles.get(sym, {}).get("name") or sym
+
+        # Persist back — try Config/ first (works locally), /tmp/ on cloud
+        for candidate in [cache_path, Path("/tmp/description_cache.json")]:
             try:
-                yf_sym = YF_TICKER_MAP.get(sym, sym)
-                info   = yf.Ticker(yf_sym).info
-                name   = info.get("longName") or info.get("shortName") or info.get("displayName")
-                cache[sym] = name if name else sym
+                candidate.write_text(json.dumps(cache, indent=2))
+                break
             except Exception:
-                cache[sym] = sym
-            time.sleep(0.2)
-        if cache_path:
-            try:
-                cache_path.write_text(json.dumps(cache, indent=2))
-            except Exception:
-                pass
+                continue
 
     return cache
 

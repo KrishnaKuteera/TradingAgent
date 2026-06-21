@@ -5,8 +5,6 @@ import time
 from typing import Optional
 
 import pandas as pd
-import yfinance as yf
-
 from pathlib import Path
 from .config import FOLDER, CONFIG_DIR, ACCOUNT_LABELS, YF_TICKER_MAP, SECTOR_NAMES
 
@@ -33,37 +31,14 @@ def _norm_sector(raw: str) -> str:
     return SECTOR_NAMES.get(key, raw.replace("_", " ").title())
 
 
-def _yfin_fetch(symbol: str) -> Optional[dict]:
-    """Fetch sector weightings from yfinance. Returns {sector: weight} or None."""
+def _fmp_fetch(symbol: str) -> Optional[dict]:
+    """Fetch sector from FMP profile. Returns {sector: 1.0} or None."""
     try:
-        yf_sym = YF_TICKER_MAP.get(symbol, symbol)
-        ticker = yf.Ticker(yf_sym)
-        info   = ticker.info
-
-        sec = info.get("sector")
-        if sec:
-            return {_norm_sector(sec): 1.0}
-
-        try:
-            sw = ticker.funds_data.sector_weightings
-            if sw:
-                weights = {_norm_sector(k): float(v) for k, v in sw.items() if v}
-                total = sum(weights.values())
-                if total > 0:
-                    return {k: v / total for k, v in weights.items()}
-        except Exception:
-            pass
-
-        sw_list = info.get("sectorWeightings")
-        if sw_list:
-            weights: dict = {}
-            for item in (sw_list if isinstance(sw_list, list) else [sw_list]):
-                for k, v in item.items():
-                    s = _norm_sector(k)
-                    weights[s] = weights.get(s, 0.0) + float(v or 0)
-            total = sum(weights.values())
-            if total > 0:
-                return {k: v / total for k, v in weights.items() if v > 0}
+        from .fmp import fetch_profiles
+        profiles = fetch_profiles([symbol])
+        sector = profiles.get(symbol, {}).get("sector")
+        if sector:
+            return {_norm_sector(sector): 1.0}
     except Exception:
         pass
     return None
@@ -87,13 +62,23 @@ def load_sector_data(symbols: list) -> dict:
     ]
     if to_fetch:
         print(f"  Fetching sector data for: {', '.join(to_fetch)}")
-        for sym in to_fetch:
-            cache[sym] = _yfin_fetch(sym)
-            time.sleep(0.3)
+        # Batch fetch all missing symbols in one FMP call
         try:
-            cache_path.write_text(json.dumps(cache, indent=2))
+            from .fmp import fetch_profiles
+            profiles = fetch_profiles(to_fetch)
+            for sym in to_fetch:
+                sector = profiles.get(sym, {}).get("sector")
+                cache[sym] = {_norm_sector(sector): 1.0} if sector else None
         except Exception:
-            pass
+            for sym in to_fetch:
+                cache[sym] = _fmp_fetch(sym)
+
+        for candidate in [cache_path, Path("/tmp/sector_cache.json")]:
+            try:
+                candidate.write_text(json.dumps(cache, indent=2))
+                break
+            except Exception:
+                continue
 
     sector_data: dict = {}
     for sym in symbols:
