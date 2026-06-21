@@ -1,4 +1,5 @@
 import sys
+import os
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
@@ -7,11 +8,24 @@ import pandas as pd
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
 import json
-import os
 import bcrypt
 import pytz
 
 PORTFOLIO_USER = "Nanda"
+
+# --- Shared screener (PortfolioReport/src/screener.py) ---
+_here            = os.path.dirname(os.path.abspath(__file__))
+_portfolio_local = os.path.join(_here, '..', 'PortfolioReport')
+_portfolio_cloud = os.path.join(_here, 'PortfolioReport')
+_portfolio_path  = _portfolio_local if os.path.isdir(_portfolio_local) else _portfolio_cloud
+if _portfolio_path not in sys.path:
+    sys.path.insert(0, _portfolio_path)
+
+try:
+    from src.screener import run_canslim_screen, to_dataframe as screener_to_df
+    _screener_available = True
+except ImportError:
+    _screener_available = False
 
 # Page configuration
 st.set_page_config(
@@ -190,22 +204,19 @@ def logout():
 
 # Fetch tickers and sectors from Tickers tab
 @st.cache_data(ttl=300)
-def fetch_tickers_with_sectors():
-    """Fetch tickers and their sectors from 'Tickers' tab (caching for 5 min)"""
+def fetch_tickers():
+    """Fetch tickers from 'Tickers' tab in Google Sheets."""
     try:
         client = get_gspread_client()
         spreadsheet = client.open('StockTracker')
-
-        # Try to get the 'Tickers' worksheet
         try:
             worksheet = spreadsheet.worksheet('Tickers')
-        except:
+        except Exception:
             worksheet = spreadsheet.sheet1
 
         all_values = worksheet.get_all_values()
-
         if not all_values:
-            return [], {}
+            return []
 
         headers = [h.lower().strip() for h in all_values[0]]
         ticker_idx = headers.index('ticker') if 'ticker' in headers else 0
@@ -214,201 +225,53 @@ def fetch_tickers_with_sectors():
         for row in all_values[1:]:
             if row and len(row) > ticker_idx and row[ticker_idx].strip():
                 tickers.append(row[ticker_idx].strip().upper())
-
-        # Fetch sector, sub-sector, and description from yfinance
-        sectors = {}
-        sub_sectors = {}
-        descriptions = {}
-        for ticker in tickers:
-            try:
-                info = yf.Ticker(ticker).info
-                sector = info.get('sector', 'Unknown')
-                industry = info.get('industry', 'Unknown')
-                # Get business description - try multiple fields
-                desc = info.get('longBusinessSummary', '')
-                if not desc:
-                    desc = info.get('businessSummary', '')
-                # Limit description to first 150 characters for readability
-                if desc:
-                    desc = desc[:150].rstrip() + '...' if len(desc) > 150 else desc
-                else:
-                    desc = 'N/A'
-
-                sectors[ticker] = sector if sector else 'Unknown'
-                sub_sectors[ticker] = industry if industry else 'Unknown'
-                descriptions[ticker] = desc
-            except:
-                sectors[ticker] = 'Unknown'
-                sub_sectors[ticker] = 'Unknown'
-                descriptions[ticker] = 'N/A'
-
-        return tickers, sectors, sub_sectors, descriptions
+        return tickers
     except Exception as e:
         st.error(f"Error fetching tickers: {str(e)}")
-        return [], {}, {}
+        return []
 
-@st.cache_data(ttl=300)
-def fetch_tickers():
-    """Fetch tickers from 'Tickers' tab (backward compatibility)"""
-    tickers, _, _, _ = fetch_tickers_with_sectors()
-    return tickers
-
-# Analyze stocks with CANSLIM metrics
+# Analyze stocks with CANSLIM metrics — delegates to shared screener module
 def analyze_stocks(tickers):
-    """Analyze stocks for buy zone signals + CANSLIM metrics"""
-    results = []
+    """Analyze stocks for buy zone signals + CANSLIM metrics."""
+    if not _screener_available:
+        st.error("Screener module not available. Check PortfolioReport/src/screener.py.")
+        return []
+
     progress_bar = st.progress(0)
     status_text = st.empty()
+    total = len(tickers)
+    _counter = [0]
 
-    # Download SPY for RS Rating calculation (once at the start)
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=365)
-    try:
-        spy_data = yf.download('SPY', start=start_date, end=end_date, progress=False)
-        spy_return = ((spy_data['Close'].iloc[-1] - spy_data['Close'].iloc[0]) / spy_data['Close'].iloc[0]) * 100
-    except:
-        spy_return = 10  # Default fallback
-        spy_data = None
+    def _on_status(msg):
+        _counter[0] += 1
+        status_text.text(msg)
+        progress_bar.progress(min(_counter[0] / max(total, 1), 1.0))
 
-    # Calculate RS Ratings for all tickers first (for ranking)
-    rs_ratings = {}
-    for idx, ticker in enumerate(tickers):
-        status_text.text(f"Calculating RS Rating... {ticker} ({idx+1}/{len(tickers)})")
-        try:
-            data_365 = yf.download(ticker, start=start_date, end=end_date, progress=False)
-            if len(data_365) > 0:
-                ticker_return = ((data_365['Close'].iloc[-1] - data_365['Close'].iloc[0]) / data_365['Close'].iloc[0]) * 100
-                rs_value = (ticker_return / spy_return) * 100 if spy_return != 0 else 50
-                rs_ratings[ticker] = rs_value
-            else:
-                rs_ratings[ticker] = 0
-        except:
-            rs_ratings[ticker] = 0
-
-    # Rank RS ratings and convert to 1-99 scale
-    sorted_rs = sorted(rs_ratings.items(), key=lambda x: x[1], reverse=True)
-    rs_rank = {ticker: int((i / len(tickers)) * 99) + 1 for i, (ticker, _) in enumerate(sorted_rs)}
-
-    # Analyze individual stocks
-    for idx, ticker in enumerate(tickers):
-        status_text.text(f"Analyzing {ticker}... ({idx+1}/{len(tickers)})")
-        progress_bar.progress((idx + 1) / len(tickers))
-
-        try:
-            end_date = datetime.now()
-            start_date_100 = end_date - timedelta(days=100)
-            start_date_252 = end_date - timedelta(days=252)
-
-            # Download 252 days of data for all calculations
-            data = yf.download(ticker, start=start_date_252, end=end_date, progress=False)
-
-            if len(data) == 0:
-                results.append({
-                    'Ticker': ticker,
-                    'Status': '⚠️ No Data',
-                    'Current Price': 'N/A',
-                    '50-DMA': 'N/A',
-                    'Distance from 50-DMA': 'N/A',
-                    'Signal': 'No Data',
-                    'Buy Zone': False,
-                    'RS Rating': 0,
-                    'Above 200-DMA': False,
-                    'Volume Surge': False,
-                    '52W High %': 0,
-                    'Above Pivot': False
-                })
-                continue
-
-            # Extract current price and moving averages
-            current_price = data['Close'].iloc[-1].item() if hasattr(data['Close'].iloc[-1], 'item') else float(data['Close'].iloc[-1])
-            sma_50 = data['Close'].tail(50).mean().item() if hasattr(data['Close'].tail(50).mean(), 'item') else float(data['Close'].tail(50).mean())
-            sma_200 = data['Close'].tail(200).mean().item() if hasattr(data['Close'].tail(200).mean(), 'item') else float(data['Close'].tail(200).mean())
-
-            high_52w = data['High'].tail(252).max().item() if hasattr(data['High'].tail(252).max(), 'item') else float(data['High'].tail(252).max())
-            low_52w = data['Low'].tail(252).min().item() if hasattr(data['Low'].tail(252).min(), 'item') else float(data['Low'].tail(252).min())
-            recent_high = data['High'].tail(20).max().item() if hasattr(data['High'].tail(20).max(), 'item') else float(data['High'].tail(20).max())
-            recent_low = data['Low'].tail(20).min().item() if hasattr(data['Low'].tail(20).min(), 'item') else float(data['Low'].tail(20).min())
-            pivot_high = data['High'].tail(10).max().item() if hasattr(data['High'].tail(10).max(), 'item') else float(data['High'].tail(10).max())
-
-            # Volume calculations
-            today_volume = data['Volume'].iloc[-1].item() if hasattr(data['Volume'].iloc[-1], 'item') else float(data['Volume'].iloc[-1])
-            avg_50_volume = data['Volume'].tail(50).mean().item() if hasattr(data['Volume'].tail(50).mean(), 'item') else float(data['Volume'].tail(50).mean())
-
-            # Distance calculations
-            distance_from_dma = ((current_price - sma_50) / sma_50) * 100
-            high_52w_pct = ((high_52w - current_price) / high_52w) * 100 if high_52w > 0 else 0
-
-            recent_range = recent_high - recent_low
-            hist_range = high_52w - low_52w
-            range_compression = (recent_range / hist_range) * 100 if hist_range > 0 else 0
-
-            # CANSLIM Flags
-            above_200_dma = current_price > sma_200
-            volume_surge = today_volume > (avg_50_volume * 1.5)
-            above_pivot = current_price > pivot_high
-            rs_rating_value = rs_rank.get(ticker, 50)
-
-            # CANSLIM Screening Logic
-            canslim_score = 0
-            canslim_signals = []
-
-            # L - Leader (RS Rating > 70)
-            if rs_rating_value > 70:
-                canslim_score += 1
-                canslim_signals.append("L")
-
-            # S - Supply/Demand (Volume Surge)
-            if volume_surge:
-                canslim_score += 1
-                canslim_signals.append("S")
-
-            # M - Market (Above 200-DMA)
-            if above_200_dma:
-                canslim_score += 1
-                canslim_signals.append("M")
-
-            # N - New Highs/Pivot
-            if above_pivot or high_52w_pct < 10:
-                canslim_score += 1
-                canslim_signals.append("N")
-
-            # A/C/I - Will need external data (not in daily OHLCV)
-            # For now, we flag stocks that meet L+S+M+N
-
-            is_buy_zone = canslim_score >= 3  # Passes if 3+ CANSLIM criteria met
-            signals = [f"CANSLIM: {', '.join(canslim_signals)}" if canslim_signals else "No CANSLIM Match"]
-
-            results.append({
-                'Ticker': ticker,
-                'Match': '✅' if is_buy_zone else '❌',
-                'Price': f"${current_price:.2f}",
-                'RS': rs_rating_value,
-                'Vol Surge': '✅' if volume_surge else '❌',
-                'Trend (M)': '✅' if above_200_dma else '❌',
-                'Pivot': '✅' if above_pivot else '❌',
-                '52W High %': f"{high_52w_pct:.1f}%",
-                'CANSLIM': ' '.join(canslim_signals) if canslim_signals else 'N/A',
-                'Score': canslim_score,
-                'Buy Zone': is_buy_zone
-            })
-
-        except Exception as e:
-            results.append({
-                'Ticker': ticker,
-                'Match': '❌',
-                'Price': 'Error',
-                'RS': 0,
-                'Vol Surge': '❌',
-                'Trend (M)': '❌',
-                'Pivot': '❌',
-                '52W High %': 'N/A',
-                'CANSLIM': 'Error',
-                'Score': 0,
-                'Buy Zone': False
-            })
+    raw = run_canslim_screen(tickers, status_callback=_on_status)
 
     progress_bar.empty()
     status_text.empty()
+
+    # Convert to the legacy column format the rest of dashboard.py expects
+    results = []
+    for r in raw:
+        results.append({
+            "Ticker":     r["ticker"],
+            "Match":      "✅" if r["buy_zone"] else "❌",
+            "Price":      f"${r['price']:.2f}" if r["price"] else "N/A",
+            "RS":         r["rs"],
+            "Vol Surge":  "✅" if r["vol_surge"] else "❌",
+            "Trend (M)":  "✅" if r["above_200dma"] else "❌",
+            "Pivot":      "✅" if r["near_pivot"] else "❌",
+            "52W High %": f"{r['high_52w_pct']:.1f}%",
+            "CANSLIM":    r["canslim_letters"],
+            "Score":      r["score"],
+            "Buy Zone":   r["buy_zone"],
+            # Sector info now comes from FMP (not yfinance .info)
+            "_sector":    r["sector"],
+            "_industry":  r["industry"],
+            "_name":      r["name"],
+        })
     return results
 
 # Calculate price changes for various time periods
@@ -497,36 +360,30 @@ def display_canslim_badges(df):
     return pd.DataFrame(canslim_cols)
 
 # Display sector/sub-sector breakdown
-def display_sector_subsector_breakdown(df, sectors, sub_sectors, descriptions):
-    """Display stocks in simple sector, industry, and description table"""
+def display_sector_subsector_breakdown(df):
+    """Display stocks in simple sector, industry, and description table."""
     sector_data = []
-
     for _, row in df.iterrows():
-        ticker = row['Ticker']
-        sector = sectors.get(ticker, 'Unknown')
-        industry = sub_sectors.get(ticker, 'Unknown')
-        description = descriptions.get(ticker, 'N/A')
-
         sector_data.append({
-            'Ticker': ticker,
-            'Sector': sector,
-            'Industry': industry,
-            'What They Do': description,
-            'Price': row.get('Price', 'N/A'),
-            'RS': row.get('RS', 0),
-            'Match': row.get('Match', '❌')
+            'Ticker':   row['Ticker'],
+            'Name':     row.get('_name', row['Ticker']),
+            'Sector':   row.get('_sector', 'Unknown'),
+            'Industry': row.get('_industry', 'Unknown'),
+            'Price':    row.get('Price', 'N/A'),
+            'RS':       row.get('RS', 0),
+            'Match':    row.get('Match', '❌'),
         })
 
     sector_df = pd.DataFrame(sector_data).sort_values(['Sector', 'Industry', 'Ticker'])
     st.dataframe(sector_df, use_container_width=True, hide_index=True,
                 column_config={
-                    "Ticker": st.column_config.TextColumn(width="small"),
-                    "Sector": st.column_config.TextColumn(width="medium"),
+                    "Ticker":   st.column_config.TextColumn(width="small"),
+                    "Name":     st.column_config.TextColumn(width="medium"),
+                    "Sector":   st.column_config.TextColumn(width="medium"),
                     "Industry": st.column_config.TextColumn(width="medium"),
-                    "What They Do": st.column_config.TextColumn(width="large"),
-                    "Price": st.column_config.TextColumn(width="small"),
-                    "RS": st.column_config.NumberColumn(width="small", format="%d"),
-                    "Match": st.column_config.TextColumn(width="small"),
+                    "Price":    st.column_config.TextColumn(width="small"),
+                    "RS":       st.column_config.NumberColumn(width="small", format="%d"),
+                    "Match":    st.column_config.TextColumn(width="small"),
                 })
 
 # ============= AUTHENTICATION UI =============
@@ -622,12 +479,10 @@ else:
 
         # Sector Distribution Pie Chart
         st.subheader("📊 Stock Distribution by Sector")
-        _, sectors, sub_sectors, _ = fetch_tickers_with_sectors()
-
         sector_counts = {}
-        for ticker in df['Ticker']:
-            if ticker in sectors:
-                sector = sectors[ticker]
+        for _, row in df.iterrows():
+            sector = row.get('_sector', 'Unknown')
+            if sector:
                 sector_counts[sector] = sector_counts.get(sector, 0) + 1
 
         if sector_counts:
@@ -695,9 +550,8 @@ else:
 
         with tab_sectors:
             st.subheader("Stock Distribution by Sector & Sub-sector")
-            st.markdown("Stocks grouped by industry classification from Yahoo Finance:")
-            _, sectors, sub_sectors, descriptions = fetch_tickers_with_sectors()
-            display_sector_subsector_breakdown(df, sectors, sub_sectors, descriptions)
+            st.markdown("Stocks grouped by industry classification (via FMP):")
+            display_sector_subsector_breakdown(df)
 
         with tab_performance:
             st.subheader("Price Performance (% Change)")
