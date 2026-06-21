@@ -29,7 +29,7 @@ if _portfolio_path not in sys.path:
 try:
     from src.data    import load_all_from_questrade, get_fx
     from src.signals import run_signals
-    from src.ui      import render_holdings_matrix, render_action_items, render_rule_settings
+    from src.ui      import render_decision_view, render_rule_settings
 except ImportError as e:
     st.error(f"Portfolio module not available: {e}")
     st.stop()
@@ -78,14 +78,6 @@ def _setup_tokens():
 def _render_rule_settings(rules: list) -> list:
     save_fn = save_rule if _rules_available else None
     return render_rule_settings(rules, save_rule_fn=save_fn)
-
-
-def _render_holdings_matrix(holdings: list, rules: list):
-    render_holdings_matrix(holdings, rules, show_account=True)
-
-
-def _render_action_items(actions: list):
-    render_action_items(actions, show_account=True)
 
 
 # ---------------------------------------------------------------------------
@@ -205,18 +197,7 @@ with tab_analysis:
         holdings = result.get("holdings", [])
         actions  = result.get("actions",  [])
 
-        # Holdings matrix first
-        st.header("📋 Holdings — All Rules")
-        if holdings:
-            _render_holdings_matrix(holdings, rules)
-        else:
-            st.info("No holdings found.")
-
-        st.divider()
-
-        # Action items
-        st.header("🎯 Action Items")
-        _render_action_items(actions)
+        render_decision_view(holdings, rules, show_account=True, key="portfolio")
 
         st.divider()
 

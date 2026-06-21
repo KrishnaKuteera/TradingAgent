@@ -285,7 +285,7 @@ if not st.session_state.authenticated:
 
 else:
     # ============= MAIN DASHBOARD =============
-    from src.ui import render_holdings_matrix, render_action_items, render_rule_settings
+    from src.ui import render_decision_view, render_rule_settings
     from src.signals import run_signals_watchlist
 
     st.sidebar.markdown(f"### 👤 {st.session_state.user_name}")
@@ -347,26 +347,7 @@ else:
             holdings = result.get("holdings", [])
             actions  = result.get("actions",  [])
 
-            # Summary metrics
-            if holdings:
-                immediate = sum(1 for h in holdings if h["worst_urgency"] == "IMMEDIATE")
-                this_week = sum(1 for h in holdings if h["worst_urgency"] == "THIS WEEK")
-                ok        = sum(1 for h in holdings if h["worst_urgency"] == "NONE")
-                col1, col2, col3, col4 = st.columns(4)
-                col1.metric("Total Stocks", len(holdings))
-                col2.metric("🔴 Immediate",  immediate)
-                col3.metric("🟡 This Week",  this_week)
-                col4.metric("✅ OK",          ok)
-
-            # Holdings matrix
-            st.header("📋 All Stocks — Rule Results")
-            render_holdings_matrix(holdings, rules, show_account=False)
-
-            st.divider()
-
-            # Action items
-            st.header("🎯 Action Items")
-            render_action_items(actions, show_account=False)
+            render_decision_view(holdings, rules, show_account=False, key="watchlist")
 
             st.divider()
 

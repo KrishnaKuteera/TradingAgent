@@ -1,9 +1,38 @@
-"""Shared Streamlit UI components used by both portfolio analysis and dashboard."""
+"""Shared Streamlit UI components for portfolio analysis and dashboard."""
 
 import math
 import streamlit as st
 import pandas as pd
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_MARKET_RULES   = {"canslim_m", "market_golden_cross", "market_death_cross", "market_distribution_day"}
+_BUY_RULES      = {"canslim_l", "canslim_s", "sell_new_high_low_vol"}
+_BUY_CATEGORIES = {"CANSLIM", "BUY_ENTRY"}
+_SELL_TECH_RULES = {
+    "sell_below_200", "sell_sma50_break", "sell_poor_rs", "sell_distribution_volume",
+    "sell_peak_decline", "sell_consecutive_down", "sell_closing_low",
+    "sell_above_200_extended", "sell_exhaustion_sharan", "sell_failed_breakout",
+}
+_SELL_POS_RULES = {"position_limit", "sell_hard_stop", "sell_alt_stop", "sell_take_profits", "sell_climax_run"}
+
+STATUS_ICON = {"PASS": "✅", "FAIL": "❌", "WARN": "⚠️", "N/A": "—"}
+URGENCY_ORDER = {"IMMEDIATE": 0, "THIS WEEK": 1, "MONITOR": 2, "NONE": 3}
+
+_VERDICT_COLOR = {
+    "buy":   ("Buy candidate",    "🟢"),
+    "sell":  ("Sell",             "🔴"),
+    "watch": ("Watch — conflict", "🟡"),
+    "hold":  ("Hold",             "🔵"),
+    "mon":   ("Monitor",          "⚪"),
+}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _fmt_price(val) -> str:
     try:
@@ -20,102 +49,289 @@ def _fmt_pct(val) -> str:
     except Exception:
         return "—"
 
-STATUS_ICON   = {"PASS": "✅", "FAIL": "❌", "WARN": "⚠️", "N/A": "—"}
-URGENCY_BADGE = {
-    "IMMEDIATE": "🔴 IMMEDIATE",
-    "THIS WEEK": "🟡 THIS WEEK",
-    "MONITOR":   "🔵 MONITOR",
-    "NONE":      "✅ OK",
-}
-URGENCY_ORDER = {"IMMEDIATE": 0, "THIS WEEK": 1, "MONITOR": 2, "NONE": 3}
+
+def _is_buy_rule(r: dict, rules_lookup: dict) -> bool:
+    if r["rule_id"] in _BUY_RULES:
+        return True
+    cat = rules_lookup.get(r["rule_id"], {}).get("category", "")
+    return cat in _BUY_CATEGORIES
 
 
-def render_holdings_matrix(holdings: list, rules: list, show_account: bool = True):
-    """Render the full holdings matrix with one column per enabled auto-rule.
+def _classify(r: dict, rules_lookup: dict) -> str:
+    rid = r["rule_id"]
+    if rid in _MARKET_RULES:
+        return "market"
+    if _is_buy_rule(r, rules_lookup):
+        return "buy"
+    if rid in _SELL_POS_RULES:
+        return "pos"
+    return "sell_tech"
 
-    show_account=False hides the Account column (useful for single-context views).
-    """
+
+def _scores(rule_results: list, rules_lookup: dict):
+    buy_pass = buy_total = sell_fail = sell_total = 0
+    for r in rule_results:
+        cls = _classify(r, rules_lookup)
+        if cls == "buy":
+            buy_total += 1
+            if r["status"] == "PASS":
+                buy_pass += 1
+        elif cls in ("sell_tech", "pos"):
+            sell_total += 1
+            if r["status"] in ("FAIL", "WARN"):
+                sell_fail += 1
+    return buy_pass, buy_total, sell_fail, sell_total
+
+
+def _verdict(holding: dict, rules_lookup: dict):
+    results       = holding["rule_results"]
+    urgency       = holding["worst_urgency"]
+    buy_pass, buy_total, sell_fail, sell_total = _scores(results, rules_lookup)
+
+    market_r = next((r for r in results if r["rule_id"] == "canslim_m"), None)
+    market_ok = (market_r["status"] == "PASS") if market_r else True
+
+    # Collect top reasons
+    fired_sell = sorted(
+        [r for r in results if r["status"] in ("FAIL", "WARN") and r.get("value")],
+        key=lambda r: URGENCY_ORDER.get(r.get("urgency", "NONE"), 3)
+    )
+    fired_buy  = [r for r in results if r["status"] == "PASS" and _is_buy_rule(r, rules_lookup)]
+
+    def _buy_reason():
+        parts = [f"{r['name']}: {r['value']}" for r in fired_buy[:3]]
+        return " · ".join(parts) if parts else "no buy signals"
+
+    def _sell_reason():
+        parts = [f"{r['name']}: {r['value']}" for r in fired_sell[:3]]
+        return " · ".join(parts) if parts else ""
+
+    if urgency == "IMMEDIATE":
+        return "sell", _sell_reason()
+    if buy_pass >= 3 and market_ok and sell_fail <= 1:
+        return "buy", _buy_reason()
+    if buy_pass >= 3 and sell_fail >= 2:
+        reason = _buy_reason() + " BUT " + _sell_reason()
+        return "watch", reason
+    if sell_fail >= 3 or urgency == "THIS WEEK":
+        return "sell", _sell_reason()
+    if buy_pass >= 2:
+        parts = [_buy_reason()]
+        if _sell_reason():
+            parts.append(_sell_reason())
+        return "hold", " · ".join(parts)
+    return "mon", _sell_reason() or _buy_reason()
+
+
+# ---------------------------------------------------------------------------
+# Detail section — one stock full breakdown
+# ---------------------------------------------------------------------------
+
+def _section_table(results: list, rules_lookup: dict):
+    """Render a clean detail table for a group of rule results."""
+    if not results:
+        st.caption("No rules in this section.")
+        return
+    rows = []
+    for r in results:
+        desc = rules_lookup.get(r["rule_id"], {}).get("description", "")
+        rows.append({
+            "Rule":    r["name"],
+            "Desc":    desc,
+            "Value":   r.get("value", "—"),
+            "Detail":  r.get("detail", ""),
+            "Status":  STATUS_ICON.get(r["status"], "—"),
+            "Action":  r.get("action") or "—",
+        })
+    df = pd.DataFrame(rows)
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Rule":   st.column_config.TextColumn("Rule", width="medium"),
+            "Desc":   st.column_config.TextColumn("Description", width="large"),
+            "Value":  st.column_config.TextColumn("Value", width="medium"),
+            "Detail": st.column_config.TextColumn("Detail", width="large"),
+            "Status": st.column_config.TextColumn("Status", width="small"),
+            "Action": st.column_config.TextColumn("Action", width="medium"),
+        },
+    )
+
+
+def _render_detail(holding: dict, rules_lookup: dict):
+    vtype, reason = _verdict(holding, rules_lookup)
+    label, icon   = _VERDICT_COLOR[vtype]
+
+    price_str = _fmt_price(holding["current_price"])
+    pl_str    = _fmt_pct(holding["pl_pct"]) if holding["pl_pct"] != 0.0 else ""
+    pl_part   = f" · P&L {pl_str}" if pl_str else ""
+
+    st.markdown(f"### {holding['symbol']} &nbsp; {price_str}{pl_part} &nbsp; {icon} {label}")
+    st.caption(reason)
+    st.divider()
+
+    results      = holding["rule_results"]
+    market_res   = [r for r in results if r["rule_id"] in _MARKET_RULES]
+    buy_res      = [r for r in results if _is_buy_rule(r, rules_lookup)]
+    sell_tech_res= [r for r in results if r["rule_id"] in _SELL_TECH_RULES]
+    sell_pos_res = [r for r in results if r["rule_id"] in _SELL_POS_RULES]
+
+    if market_res:
+        st.markdown("#### 🌍 Market conditions")
+        _section_table(market_res, rules_lookup)
+        st.markdown("")
+
+    if buy_res:
+        st.markdown("#### 🟢 Buy signals")
+        _section_table(buy_res, rules_lookup)
+        st.markdown("")
+
+    if sell_tech_res:
+        st.markdown("#### 🔴 Sell signals — technical")
+        _section_table(sell_tech_res, rules_lookup)
+        st.markdown("")
+
+    if sell_pos_res:
+        st.markdown("#### 🟠 Sell signals — position")
+        if holding["pl_pct"] == 0.0 and holding["account"] == "Watchlist":
+            st.caption("Position rules not applicable — watchlist stock (no cost data).")
+        _section_table(sell_pos_res, rules_lookup)
+
+
+# ---------------------------------------------------------------------------
+# Main decision view
+# ---------------------------------------------------------------------------
+
+def render_decision_view(holdings: list, rules: list, show_account: bool = True, key: str = "decision"):
+    """Two focused tables (buy | sell) + click-to-expand detail section below."""
     if not holdings:
         st.info("No holdings found.")
         return
 
-    auto_rules = [r for r in rules if r.get("enabled") and r.get("automatable")]
-    sorted_h   = sorted(holdings, key=lambda x: (URGENCY_ORDER.get(x["worst_urgency"], 3), x["symbol"]))
+    rules_lookup = {r["rule_id"]: r for r in rules}
 
-    rows = []
-    for h in sorted_h:
-        rule_map = {r["rule_id"]: r for r in h["rule_results"]}
-        row = {"Alert": URGENCY_BADGE.get(h["worst_urgency"], "✅ OK"),
-               "Symbol": h["symbol"]}
-        if show_account:
-            row["Account"] = h["account"]
-        row["P&L %"] = _fmt_pct(h["pl_pct"])
-        row["Price"]  = _fmt_price(h["current_price"])
-        row["Trend"]  = h["trend"]
-        for rule in auto_rules:
-            res = rule_map.get(rule["rule_id"])
-            row[rule["name"]] = f"{STATUS_ICON.get(res['status'], '—')} {res['value']}" if res else "—"
-        rows.append(row)
+    # Augment each holding with verdict + scores
+    enriched = []
+    for h in holdings:
+        vtype, reason = _verdict(h, rules_lookup)
+        bp, bt, sf, st_ = _scores(h["rule_results"], rules_lookup)
+        label, icon = _VERDICT_COLOR[vtype]
+        enriched.append({
+            **h,
+            "_vtype":      vtype,
+            "_reason":     reason,
+            "_label":      label,
+            "_icon":       icon,
+            "_buy_pass":   bp,
+            "_buy_total":  bt,
+            "_sell_fail":  sf,
+            "_sell_total": st_,
+        })
 
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    # Split into buy candidates and sell alerts
+    buy_candidates = sorted(
+        [h for h in enriched if h["_vtype"] in ("buy", "watch", "hold")],
+        key=lambda h: (-h["_buy_pass"], h["symbol"])
+    )
+    sell_alerts = sorted(
+        [h for h in enriched if h["_vtype"] in ("sell", "watch")],
+        key=lambda h: (URGENCY_ORDER.get(h["worst_urgency"], 3), h["symbol"])
+    )
+    # stocks that are only "mon" — appear in neither table → add to buy side
+    monitor_only = [h for h in enriched if h["_vtype"] == "mon"]
+    buy_candidates += sorted(monitor_only, key=lambda h: h["symbol"])
 
-    st.markdown("#### Signal Details")
-    has_alerts = False
-    for h in sorted_h:
-        alerts = [r for r in h["rule_results"]
-                  if r["status"] in ("FAIL", "WARN") and r.get("detail")]
-        if alerts:
-            has_alerts = True
-            label = f"**{h['symbol']}**"
+    def _make_buy_df(items):
+        rows = []
+        for h in items:
+            row = {
+                "Stock":      f"{h['symbol']} {_fmt_price(h['current_price'])}",
+                "Verdict":    f"{h['_icon']} {h['_label']}",
+                "Market":     next((STATUS_ICON.get(r["status"],"—") + " " + r["value"]
+                                    for r in h["rule_results"] if r["rule_id"] == "canslim_m"), "—"),
+                "Buy score":  f"{h['_buy_pass']}/{h['_buy_total']}",
+                "Key reason": h["_reason"][:60],
+            }
             if show_account:
-                label += f" — {h['account']}"
-            st.markdown(label)
-            for a in alerts:
-                icon = "🔴" if a["status"] == "FAIL" else "🟡"
-                tag  = f" `{a['urgency']}`" if a["urgency"] != "NONE" else ""
-                st.caption(f"{icon}{tag} **{a['name']}:** {a['detail']}")
-    if not has_alerts:
-        st.caption("No active signals.")
+                row["Account"] = h["account"]
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def _make_sell_df(items):
+        rows = []
+        for h in items:
+            row = {
+                "Stock":      f"{h['symbol']} {_fmt_price(h['current_price'])}",
+                "Urgency":    h["worst_urgency"],
+                "Sell score": f"{h['_sell_fail']}/{h['_sell_total']}",
+                "Key reason": h["_reason"][:60],
+                "P&L":        _fmt_pct(h["pl_pct"]) if h["pl_pct"] != 0.0 else "—",
+            }
+            if show_account:
+                row["Account"] = h["account"]
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    # ---- Two tables ----
+    col_buy, col_sell = st.columns(2)
+
+    selected_sym = st.session_state.get(f"{key}_selected")
+
+    with col_buy:
+        st.markdown("#### 🟢 Buy candidates")
+        buy_df = _make_buy_df(buy_candidates)
+        sel_buy = st.dataframe(
+            buy_df,
+            use_container_width=True,
+            hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
+            key=f"{key}_buy_tbl",
+        )
+        rows_sel = sel_buy.selection.get("rows", []) if sel_buy else []
+        if rows_sel:
+            sym = buy_candidates[rows_sel[0]]["symbol"]
+            st.session_state[f"{key}_selected"] = sym
+            st.session_state[f"{key}_selected_src"] = "buy"
+            selected_sym = sym
+
+    with col_sell:
+        st.markdown("#### 🔴 Sell alerts")
+        if sell_alerts:
+            sell_df = _make_sell_df(sell_alerts)
+            sel_sell = st.dataframe(
+                sell_df,
+                use_container_width=True,
+                hide_index=True,
+                on_select="rerun",
+                selection_mode="single-row",
+                key=f"{key}_sell_tbl",
+            )
+            rows_sel = sel_sell.selection.get("rows", []) if sel_sell else []
+            if rows_sel:
+                sym = sell_alerts[rows_sel[0]]["symbol"]
+                st.session_state[f"{key}_selected"] = sym
+                st.session_state[f"{key}_selected_src"] = "sell"
+                selected_sym = sym
+        else:
+            st.success("No sell alerts — all positions look healthy.")
+
+    # ---- Detail section ----
+    st.divider()
+    if selected_sym:
+        match = next((h for h in enriched if h["symbol"] == selected_sym), None)
+        if match:
+            _render_detail(match, rules_lookup)
+    else:
+        st.caption("Click any row above to see the full rule breakdown for that stock.")
 
 
-def render_action_items(actions: list, show_account: bool = True):
-    """Render action items grouped by urgency."""
-    if not actions:
-        st.success("✅ No immediate actions required.")
-        return
-
-    immediate = [a for a in actions if a["urgency"] == "IMMEDIATE"]
-    this_week = [a for a in actions if a["urgency"] == "THIS WEEK"]
-    monitor   = [a for a in actions if a["urgency"] == "MONITOR"]
-
-    _hide = {"priority", "detail", "urgency", "_rules"}
-    if not show_account:
-        _hide.add("account")
-
-    def _show(items):
-        df = pd.DataFrame(items)
-        if "pl_pct" in df.columns:
-            df["pl_pct"] = df["pl_pct"].apply(_fmt_pct)
-        visible = [c for c in df.columns if c not in _hide]
-        st.dataframe(df[visible], use_container_width=True, hide_index=True)
-
-    if immediate:
-        st.error(f"🔴 {len(immediate)} IMMEDIATE action(s)")
-        _show(immediate)
-    if this_week:
-        st.warning(f"🟡 {len(this_week)} action(s) this week")
-        _show(this_week)
-    if monitor:
-        with st.expander(f"🔵 {len(monitor)} item(s) to monitor"):
-            _show(monitor)
-
+# ---------------------------------------------------------------------------
+# Rule settings panel (shared between portfolio analysis and dashboard)
+# ---------------------------------------------------------------------------
 
 def render_rule_settings(rules: list, save_rule_fn=None) -> list:
-    """Render the rule management UI.
-
-    save_rule_fn: callable(rule_id, enabled, params) — if None, toggles are read-only.
-    Returns updated rules list.
-    """
     if not rules:
         st.info("No rules loaded.")
         return rules
@@ -134,7 +350,7 @@ def render_rule_settings(rules: list, save_rule_fn=None) -> list:
         "PERSONAL":       "🧠 Personal Rules (Sharan's)",
     }
 
-    updated = []
+    updated  = []
     readonly = save_rule_fn is None
     if readonly:
         st.caption("ℹ️ View-only — rule changes can be made by the portfolio owner.")
