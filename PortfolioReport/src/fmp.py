@@ -10,7 +10,7 @@ import os
 import requests
 from typing import Optional
 
-_BASE = "https://financialmodelingprep.com/api/v3"
+_BASE = "https://financialmodelingprep.com/stable"
 
 # TSX symbols: Questrade uses symbol.TO but FMP needs symbol.TO too — test first,
 # fall back to stripping .TO if not found.
@@ -22,14 +22,30 @@ _FMP_TICKER_MAP = {
 
 
 def _api_key() -> Optional[str]:
+    # 1. Environment variable
     key = os.environ.get("FMP_API_KEY")
     if key:
         return key
+    # 2. Streamlit secrets (cloud)
     try:
         import streamlit as st
-        return st.secrets.get("fmp", {}).get("api_key")
+        k = st.secrets.get("fmp", {}).get("api_key")
+        if k:
+            return k
     except Exception:
-        return None
+        pass
+    # 3. Local config file
+    try:
+        from .config import CONFIG_DIR
+        import re
+        rtf = (CONFIG_DIR / "FMP_Api.rtf").read_text()
+        # Extract last word — the key is the only non-RTF token at the end
+        tokens = re.findall(r'[A-Za-z0-9]{20,}', rtf)
+        if tokens:
+            return tokens[-1]
+    except Exception:
+        pass
+    return None
 
 
 def _fmp_symbol(sym: str) -> str:
@@ -51,25 +67,25 @@ def fetch_profiles(symbols: list) -> dict:
     fmp_syms = list(sym_map.keys())
 
     result = {}
-    # FMP batch: up to ~50 symbols per call
-    for i in range(0, len(fmp_syms), 50):
-        batch = fmp_syms[i:i + 50]
-        url = f"{_BASE}/profile/{','.join(batch)}"
+    for fmp_sym in fmp_syms:
+        orig = sym_map.get(fmp_sym, fmp_sym)
         try:
-            resp = requests.get(url, params={"apikey": key}, timeout=15)
+            resp = requests.get(
+                f"{_BASE}/profile",
+                params={"symbol": fmp_sym, "apikey": key},
+                timeout=15,
+            )
             if resp.status_code != 200:
                 continue
             data = resp.json()
-            if not isinstance(data, list):
+            if not isinstance(data, list) or not data:
                 continue
-            for item in data:
-                fmp_sym = item.get("symbol", "")
-                orig    = sym_map.get(fmp_sym, fmp_sym)
-                result[orig] = {
-                    "name":     item.get("companyName") or orig,
-                    "sector":   item.get("sector")   or "",
-                    "industry": item.get("industry") or "",
-                }
+            item = data[0]
+            result[orig] = {
+                "name":     item.get("companyName") or orig,
+                "sector":   item.get("sector")   or "",
+                "industry": item.get("industry") or "",
+            }
         except Exception:
             continue
 
