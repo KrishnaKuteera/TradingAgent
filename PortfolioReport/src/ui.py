@@ -4,6 +4,17 @@ import math
 import streamlit as st
 import pandas as pd
 
+
+def _trading_rules_url() -> str:
+    """Return URL to the TradingRules Google Sheet tab (set [google] sheet_url in Streamlit secrets)."""
+    try:
+        url = st.secrets.get("google", {}).get("sheet_url", "")
+        if url:
+            return url
+    except Exception:
+        pass
+    return "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit#gid=0"
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -125,34 +136,53 @@ def _render_price_performance(symbol: str):
     import yfinance as yf
     import pytz
     from datetime import datetime
+
     st.markdown("#### 📈 Price performance")
     with st.spinner(f"Loading price history for {symbol}…"):
         try:
-            hist = yf.Ticker(symbol).history(period="1y")
+            hist = yf.download(symbol, period="1y", progress=False, auto_adjust=True)
             if hist.empty:
                 st.warning("No price data available.")
                 return
-            cur = hist["Close"].iloc[-1]
+            close = hist["Close"].squeeze().dropna()
+            if close.empty:
+                st.warning("No price data available.")
+                return
+            cur      = float(close.iloc[-1])
             end_date = datetime.now(pytz.timezone("America/Toronto")).date()
+
             periods = {"1D": 2, "5D": 5, "1M": 21, "3M": 63, "6M": 126, "1Y": 252}
-            row = {"Period": [], "Price then": [], "Price now": [], "Change": []}
+            records = []
             for label, n in periods.items():
-                if len(hist) >= n:
-                    past = hist["Close"].iloc[-n]
+                if len(close) >= n:
+                    past = float(close.iloc[-n])
                     pct  = (cur - past) / past * 100
-                    row["Period"].append(label)
-                    row["Price then"].append(f"${past:.2f}")
-                    row["Price now"].append(f"${cur:.2f}")
-                    row["Change"].append(f"{pct:+.2f}%")
-            ys = hist[hist.index.year == end_date.year]
+                    records.append({"Period": label, "Then": past, "Now": cur, "_pct": pct,
+                                    "Change": f"{pct:+.2f}%", "Value": f"${past:.2f} → ${cur:.2f}"})
+            ys = close[close.index.year == end_date.year]
             if len(ys) > 0:
-                past = ys["Close"].iloc[0]
+                past = float(ys.iloc[0])
                 pct  = (cur - past) / past * 100
-                row["Period"].append("YTD")
-                row["Price then"].append(f"${past:.2f}")
-                row["Price now"].append(f"${cur:.2f}")
-                row["Change"].append(f"{pct:+.2f}%")
-            st.dataframe(pd.DataFrame(row), use_container_width=True, hide_index=True)
+                records.append({"Period": "YTD", "Then": past, "Now": cur, "_pct": pct,
+                                "Change": f"{pct:+.2f}%", "Value": f"${past:.2f} → ${cur:.2f}"})
+
+            df = pd.DataFrame(records)[["Period", "Value", "Change"]]
+
+            def _color_change(val: str):
+                try:
+                    num = float(val.replace("%", "").replace("+", ""))
+                    if num > 0:
+                        intensity = min(int(abs(num) * 8), 120)
+                        return f"background-color: rgba(0,180,0,{intensity/255:.2f}); color: #003300; font-weight:600"
+                    elif num < 0:
+                        intensity = min(int(abs(num) * 8), 120)
+                        return f"background-color: rgba(220,0,0,{intensity/255:.2f}); color: #fff; font-weight:600"
+                except Exception:
+                    pass
+                return ""
+
+            styled = df.style.applymap(_color_change, subset=["Change"])
+            st.dataframe(styled, use_container_width=True, hide_index=True)
         except Exception as e:
             st.warning(f"Could not load price history: {e}")
 
@@ -192,83 +222,96 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
         # C — Current quarterly earnings (manual)
         {
             "Letter": "C",
-            "Criterion": "Current quarterly earnings",
+            "Criterion": "Current quarterly EPS & revenue growth",
             "Status": "📋 Manual review",
             "Action": "—",
             "Value": "—",
-            "Detail": (
+            "Rule Description": (
                 # TODO: DeepVue screenshot upload — parse EPS & revenue growth from screenshot
-                "Upload DeepVue screenshot to auto-fill. "
-                "Look for: EPS growth ≥ 25% QoQ, accelerating revenue."
+                "O'Neil: EPS growth ≥ 25% vs same quarter last year, accelerating. "
+                "Revenue growth should also accelerate. "
+                "Upload DeepVue screenshot to auto-fill."
             ),
         },
         # A — Annual earnings growth (manual)
         {
             "Letter": "A",
-            "Criterion": "Annual earnings growth (3-year)",
+            "Criterion": "Annual EPS growth — 3-year track record",
             "Status": "📋 Manual review",
             "Action": "—",
             "Value": "—",
-            "Detail": (
+            "Rule Description": (
                 # TODO: DeepVue screenshot upload
-                "Upload DeepVue screenshot to auto-fill. "
-                "Look for: 3-yr avg EPS growth ≥ 25%, ROE ≥ 17%."
+                "O'Neil: 3-yr avg annual EPS growth ≥ 25%. ROE ≥ 17%. "
+                "Consistent growth, not one-time jumps. "
+                "Upload DeepVue screenshot to auto-fill."
             ),
         },
-        # N — New product / catalyst / near high
+        # N — New product / service / management / industry conditions
         {
             "Letter": "N",
-            "Criterion": "New catalyst / near 52-week high",
-            "Status": STATUS_ICON.get(canslim_s["status"] if canslim_s else "N/A", "—"),
-            "Action": (canslim_s.get("action") or "—") if canslim_s else "—",
-            "Value": (peak["value"] if peak else "—") + (" | " + near_high["value"] if near_high else ""),
-            "Detail": (
-                (peak["detail"] + " " if peak and peak.get("detail") else "") +
-                (f"Recent news: {news_str}" if news_str else "No recent news found.")
+            "Criterion": "New product, service, management, or industry shift",
+            "Status": "📋 Manual review",
+            "Action": "—",
+            "Value": (peak["value"] if peak else "—"),
+            "Rule Description": (
+                "O'Neil: stocks that make the biggest moves have something NEW driving them — "
+                "a breakthrough product, new CEO, disruptive technology, or fundamental industry change. "
+                + (f"\nRecent news: {news_str}" if news_str else "\nNo recent news found via FMP.")
             ),
         },
         # S — Supply and demand (volume)
         {
             "Letter": "S",
-            "Criterion": "Supply & demand — volume on breakout",
+            "Criterion": "Supply & demand — volume surge on breakout",
             "Status": STATUS_ICON.get(canslim_s["status"], "—") if canslim_s else "—",
             "Action": (canslim_s.get("action") or "—") if canslim_s else "—",
             "Value": canslim_s["value"] if canslim_s else "—",
-            "Detail": canslim_s["detail"] if canslim_s and canslim_s.get("detail") else "Volume data from yfinance.",
+            "Rule Description": canslim_s["detail"] if canslim_s and canslim_s.get("detail") else (
+                "Volume should be ≥ 40–50% above average on a breakout day. "
+                "Heavy volume = institutional buying. Thin volume breakouts fail."
+            ),
         },
-        # L — Leader (RS rating)
+        # L — Leader (RS rating — manual review; our computed RS is approximate)
         {
             "Letter": "L",
-            "Criterion": "Leader — RS rating ≥ 80",
-            "Status": STATUS_ICON.get(canslim_l["status"], "—") if canslim_l else "—",
-            "Action": (canslim_l.get("action") or "—") if canslim_l else "—",
+            "Criterion": "Leader or Laggard — RS rating vs market",
+            "Status": "📋 Manual review",
+            "Action": "—",
             "Value": canslim_l["value"] if canslim_l else "—",
-            "Detail": (
-                (canslim_l["detail"] if canslim_l and canslim_l.get("detail") else "") +
-                " Stock should be in top 20% of market for relative strength."
+            "Rule Description": (
+                "O'Neil: buy the top 1–2 stocks in a leading industry group. "
+                "Avoid sympathy plays. IBD RS Rating ≥ 80 required. "
+                "Our computed RS is an estimate — verify on IBD / TradingView. "
+                + (canslim_l["detail"] if canslim_l and canslim_l.get("detail") else "")
             ),
         },
         # I — Institutional sponsorship (manual)
         {
             "Letter": "I",
-            "Criterion": "Institutional sponsorship",
+            "Criterion": "Institutional sponsorship & ownership trend",
             "Status": "📋 Manual review",
             "Action": "—",
             "Value": "—",
-            "Detail": (
+            "Rule Description": (
                 # TODO: DeepVue screenshot upload
-                "Upload DeepVue screenshot to auto-fill. "
-                "Look for: increasing institutional ownership QoQ, quality funds buying."
+                "O'Neil: rising number of institutional owners (funds, pensions) QoQ. "
+                "Quality matters — top-rated funds buying is a strong signal. "
+                "Upload DeepVue screenshot to auto-fill."
             ),
         },
         # M — Market direction
         {
             "Letter": "M",
-            "Criterion": "Market direction — SPY + QQQ uptrend",
+            "Criterion": "Market direction — SPY + QQQ in confirmed uptrend",
             "Status": STATUS_ICON.get(canslim_m["status"], "—") if canslim_m else "—",
             "Action": (canslim_m.get("action") or "—") if canslim_m else "—",
             "Value": canslim_m["value"] if canslim_m else "—",
-            "Detail": canslim_m["detail"] if canslim_m and canslim_m.get("detail") else "SPY + QQQ vs 50/200-SMA.",
+            "Rule Description": (
+                "O'Neil: never fight the market. 3 out of 4 stocks follow the market direction. "
+                "Buy only in confirmed uptrends (follow-through day). "
+                + (canslim_m["detail"] if canslim_m and canslim_m.get("detail") else "SPY + QQQ vs 50/200-SMA.")
+            ),
         },
     ]
 
@@ -278,12 +321,12 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
         use_container_width=True,
         hide_index=True,
         column_config={
-            "Letter":    st.column_config.TextColumn("",          width=30),
-            "Criterion": st.column_config.TextColumn("Criterion", width="medium"),
-            "Status":    st.column_config.TextColumn("Status",    width="small"),
-            "Action":    st.column_config.TextColumn("Action",    width="small"),
-            "Value":     st.column_config.TextColumn("Value",     width="medium"),
-            "Detail":    st.column_config.TextColumn("Detail / News", width="large"),
+            "Letter":          st.column_config.TextColumn("",               width="small"),
+            "Criterion":       st.column_config.TextColumn("Criterion",      width="medium"),
+            "Status":          st.column_config.TextColumn("Status",         width="small"),
+            "Action":          st.column_config.TextColumn("Action",         width="small"),
+            "Value":           st.column_config.TextColumn("Value",          width="medium"),
+            "Rule Description": st.column_config.TextColumn("Rule Description", width="large"),
         },
     )
 
@@ -300,11 +343,11 @@ def _rule_table(results: list, rules_lookup: dict):
     for r in results:
         desc = rules_lookup.get(r["rule_id"], {}).get("description", "")
         rows.append({
-            "Rule":   r["name"],
-            "Status": STATUS_ICON.get(r["status"], "—"),
-            "Action": r.get("action") or "—",
-            "Value":  r.get("value", "—"),
-            "Detail": r.get("detail", "") or desc,
+            "Rule":             r["name"],
+            "Status":           STATUS_ICON.get(r["status"], "—"),
+            "Action":           r.get("action") or "—",
+            "Value":            r.get("value", "—"),
+            "Rule Description": r.get("detail", "") or desc,
         })
     df = pd.DataFrame(rows)
     st.dataframe(
@@ -312,11 +355,11 @@ def _rule_table(results: list, rules_lookup: dict):
         use_container_width=True,
         hide_index=True,
         column_config={
-            "Rule":   st.column_config.TextColumn("Rule",   width="medium"),
-            "Status": st.column_config.TextColumn("Status", width="small"),
-            "Action": st.column_config.TextColumn("Action", width="small"),
-            "Value":  st.column_config.TextColumn("Value",  width="medium"),
-            "Detail": st.column_config.TextColumn("Detail", width="large"),
+            "Rule":             st.column_config.TextColumn("Rule",             width="medium"),
+            "Status":           st.column_config.TextColumn("Status",           width="small"),
+            "Action":           st.column_config.TextColumn("Action",           width="small"),
+            "Value":            st.column_config.TextColumn("Value",            width="medium"),
+            "Rule Description": st.column_config.TextColumn("Rule Description", width="large"),
         },
     )
 
@@ -383,13 +426,13 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
     rules_lookup = {r["rule_id"]: r for r in rules}
 
     # Data source links
+    sheet_url = _trading_rules_url()
     st.markdown(
-        "**Data sources:** "
-        "[Yahoo Finance](https://finance.yahoo.com) · "
-        "[Financial Modeling Prep](https://financialmodelingprep.com) · "
-        "[O'Neil / IBD Methodology](https://www.investors.com/ibd-university/can-slim/)  &nbsp;|&nbsp; "
-        "Click any row to open full CAN SLIM detail. "
-        "Stock name links to [TradingView](https://www.tradingview.com).",
+        f"**Data:** [Yahoo Finance](https://finance.yahoo.com) · "
+        f"[FMP](https://financialmodelingprep.com) · "
+        f"[TradingRules (Google Sheet)]({sheet_url}) · "
+        f"[CAN SLIM — IBD](https://www.investors.com/ibd-university/can-slim/)  "
+        f"&nbsp;|&nbsp; Click a row → full CAN SLIM breakdown below.",
         unsafe_allow_html=False,
     )
 
