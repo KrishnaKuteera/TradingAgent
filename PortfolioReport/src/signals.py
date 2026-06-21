@@ -473,6 +473,49 @@ def _eval_failed_breakout(rule, pos, tech):
     return _result(rule, PASS, f"{gain:+.1f}% above cost")
 
 
+def _eval_canslim_s(rule, tech):
+    """S: Volume on Breakout — price near 52W high on >40% above-avg volume."""
+    vol_thresh  = rule["params"].get("volume_threshold", 1.4)
+    high_thresh = rule["params"].get("high_pct", 3.0)
+    price    = tech.get("price")
+    high_52w = tech.get("high_52w")
+    vol_r    = tech.get("vol_ratio")
+    if price is None or high_52w is None:
+        return _result(rule, NA, "No price data")
+    pct_from_high = (high_52w - price) / high_52w * 100
+    near_high = pct_from_high <= high_thresh
+    if not near_high:
+        return _result(rule, NA, f"{pct_from_high:.1f}% below 52W high — not at breakout")
+    if vol_r is None:
+        return _result(rule, WARN, "Near 52W high but no volume data")
+    if vol_r >= vol_thresh:
+        return _result(rule, PASS, f"Breakout on {vol_r:.1f}x avg volume ✓")
+    return _result(rule, WARN, f"Near high but only {vol_r:.1f}x avg volume (need {vol_thresh}x)",
+                   action="Watch", urgency="MONITOR",
+                   detail=f"Near 52W high on weak volume ({vol_r:.1f}x). Breakout not confirmed — needs {vol_thresh}x+ to be valid.")
+
+
+def _eval_canslim_m(rule, spy_tech: dict):
+    """M: Market Direction — SPY must be in confirmed uptrend."""
+    sma50  = spy_tech.get("priceAvg50") or spy_tech.get("sma50")
+    sma200 = spy_tech.get("priceAvg200") or spy_tech.get("sma200")
+    price  = spy_tech.get("price")
+    if not sma50 or not sma200 or not price:
+        return _result(rule, NA, "No SPY data")
+    if price > sma50 > sma200:
+        return _result(rule, PASS, f"SPY Stage 2 uptrend (${price:.0f} > 50-SMA ${sma50:.0f} > 200-SMA ${sma200:.0f})")
+    if price < sma200:
+        return _result(rule, FAIL, f"SPY bear market — below 200-SMA (${price:.0f} < ${sma200:.0f})",
+                       action="REDUCE RISK", urgency="IMMEDIATE",
+                       detail="Market in Stage 4 decline. O'Neil rule: no new buys, reduce exposure.")
+    if sma50 < sma200:
+        return _result(rule, WARN, f"SPY death cross — 50-SMA ${sma50:.0f} < 200-SMA ${sma200:.0f}",
+                       action="Caution", urgency="THIS WEEK",
+                       detail="Market in downtrend. Be defensive — tighten stops, avoid new buys.")
+    return _result(rule, WARN, f"SPY mixed — above 200-SMA but below 50-SMA",
+                   action="Caution", urgency="MONITOR")
+
+
 # Map rule_id → evaluator
 _EVALUATORS = {
     "position_limit":        lambda rule, pos, tech, bal: _eval_position_limit(rule, pos, bal),
@@ -492,6 +535,8 @@ _EVALUATORS = {
     "sell_distribution_volume": lambda rule, pos, tech, bal: _eval_distribution_volume(rule, tech),
     "sell_failed_breakout":  lambda rule, pos, tech, bal: _eval_failed_breakout(rule, pos, tech),
     "canslim_l":             lambda rule, pos, tech, bal: _eval_canslim_l(rule, tech),
+    "canslim_s":             lambda rule, pos, tech, bal: _eval_canslim_s(rule, tech),
+    "canslim_m":             lambda rule, pos, tech, bal: _eval_canslim_m(rule, tech.get("__spy__", {})),
     "market_golden_cross":   lambda rule, pos, tech, bal: _eval_golden_cross(rule, tech),
     "market_death_cross":    lambda rule, pos, tech, bal: _eval_death_cross(rule, tech),
     "market_distribution_day": lambda rule, pos, tech, bal: _eval_distribution_volume(rule, tech),
@@ -662,6 +707,18 @@ def run_signals(chandu_data: dict, nandu_data: dict, rules: list) -> dict:
             symbols.update(non_opt["Equity Symbol"].dropna().astype(str).tolist())
 
     technicals = fetch_technicals(sorted(symbols))
+
+    # Inject SPY market data (from FMP free tier) into every position's tech dict
+    # so canslim_m evaluator can access it via tech["__spy__"]
+    try:
+        from .fmp import fetch_spy_quote
+        spy_quote = fetch_spy_quote()
+        if spy_quote:
+            for tech in technicals.values():
+                tech["__spy__"] = spy_quote
+    except Exception:
+        pass
+
     holdings   = build_holdings_table(chandu_data, nandu_data, technicals, rules)
     actions    = build_action_items(holdings)
 

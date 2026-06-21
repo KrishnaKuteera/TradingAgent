@@ -52,6 +52,27 @@ def _fmp_symbol(sym: str) -> str:
     return _FMP_TICKER_MAP.get(sym, sym)
 
 
+def fetch_spy_quote() -> dict:
+    """Fetch SPY quote from FMP (free tier). Returns dict with price, priceAvg50, priceAvg200."""
+    key = _api_key()
+    if not key:
+        return {}
+    try:
+        resp = requests.get(
+            f"{_BASE}/quote",
+            params={"symbol": "SPY", "apikey": key},
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            return {}
+        data = resp.json()
+        if isinstance(data, list) and data:
+            return data[0]
+    except Exception:
+        pass
+    return {}
+
+
 def fetch_profiles(symbols: list) -> dict:
     """Fetch company name + sector for a list of symbols in one API call.
 
