@@ -719,6 +719,80 @@ def build_action_items(holdings: list) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Watchlist entry point (Google Sheets tickers — no position/cost data)
+# ---------------------------------------------------------------------------
+
+def run_signals_watchlist(tickers: list, rules: list) -> dict:
+    """Run the full rules engine against a watchlist (no Questrade positions).
+
+    Rules that need cost basis / account balance return N/A automatically
+    because synthetic positions carry zero values for those fields.
+    All technical rules (CAN SLIM, trend, volume, RS, distribution) run fully.
+    """
+    technicals = fetch_technicals(sorted(set(tickers)))
+
+    try:
+        from .fmp import fetch_market_quotes
+        market_quotes = fetch_market_quotes(["SPY", "QQQ"])
+        if market_quotes:
+            for tech in technicals.values():
+                tech["__market__"] = market_quotes
+    except Exception:
+        pass
+
+    # Build synthetic position rows — one per ticker
+    # Cost/quantity/account are zero/None so cost-based rules return N/A
+    empty_balances = pd.DataFrame()
+    holdings = []
+    for ticker in tickers:
+        sym = ticker.strip()
+        pos = pd.Series({
+            "Equity Symbol":      sym,
+            "Equity Description": sym,
+            "Asset Class":        "EQ",
+            "Cost Per Share":     0.0,
+            "Market Price":       0.0,
+            "Market Value":       0.0,
+            "Quantity":           0.0,
+            "Account Number":     None,
+            "_person":            "Watchlist",
+        })
+
+        tech = technicals.get(sym, {})
+        price = tech.get("price") or 0.0
+
+        rule_results = evaluate_position(pos, tech, empty_balances, rules)
+
+        worst_urgency = "NONE"
+        actions = [r["action"] for r in rule_results if r["action"] and r["status"] in (FAIL, WARN)]
+        for r in rule_results:
+            if URGENCY_RANK.get(r["urgency"], 99) < URGENCY_RANK.get(worst_urgency, 99):
+                worst_urgency = r["urgency"]
+
+        holdings.append({
+            "person":        "Watchlist",
+            "account":       "Watchlist",
+            "symbol":        sym,
+            "description":   sym,
+            "qty":           0.0,
+            "cost_basis":    0.0,
+            "current_price": round(price, 2),
+            "pl_pct":        0.0,
+            "trend":         tech.get("trend", "No data"),
+            "sma50":         round(tech["sma50"],  2) if tech.get("sma50")  else None,
+            "sma200":        round(tech["sma200"], 2) if tech.get("sma200") else None,
+            "rs_rating":     tech.get("rs_rating"),
+            "worst_urgency": worst_urgency,
+            "actions":       actions,
+            "rule_results":  rule_results,
+            "data_error":    tech.get("error"),
+        })
+
+    actions = build_action_items(holdings)
+    return {"holdings": holdings, "actions": actions, "technicals": technicals}
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 

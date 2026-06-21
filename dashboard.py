@@ -202,10 +202,9 @@ def logout():
     st.session_state.username = None
     st.session_state.user_name = None
 
-# Fetch tickers and sectors from Tickers tab
+# Fetch tickers from Google Sheets Tickers tab
 @st.cache_data(ttl=300)
 def fetch_tickers():
-    """Fetch tickers from 'Tickers' tab in Google Sheets."""
     try:
         client = get_gspread_client()
         spreadsheet = client.open('StockTracker')
@@ -213,210 +212,83 @@ def fetch_tickers():
             worksheet = spreadsheet.worksheet('Tickers')
         except Exception:
             worksheet = spreadsheet.sheet1
-
         all_values = worksheet.get_all_values()
         if not all_values:
             return []
-
         headers = [h.lower().strip() for h in all_values[0]]
         ticker_idx = headers.index('ticker') if 'ticker' in headers else 0
-
-        tickers = []
-        for row in all_values[1:]:
-            if row and len(row) > ticker_idx and row[ticker_idx].strip():
-                tickers.append(row[ticker_idx].strip().upper())
-        return tickers
+        return [row[ticker_idx].strip().upper()
+                for row in all_values[1:]
+                if row and len(row) > ticker_idx and row[ticker_idx].strip()]
     except Exception as e:
         st.error(f"Error fetching tickers: {str(e)}")
         return []
 
-# Analyze stocks with CANSLIM metrics — delegates to shared screener module
-def analyze_stocks(tickers):
-    """Analyze stocks for buy zone signals + CANSLIM metrics."""
-    if not _screener_available:
-        st.error("Screener module not available. Check PortfolioReport/src/screener.py.")
-        return []
 
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    total = len(tickers)
-    _counter = [0]
+# Fetch rules from Google Sheets (same sheet as portfolio analysis)
+def _load_rules():
+    try:
+        import importlib.util
+        _here = os.path.dirname(os.path.abspath(__file__))
+        _rules_path = os.path.join(_here, 'src', 'rules_sheet.py')
+        spec = importlib.util.spec_from_file_location("rules_sheet", _rules_path)
+        mod  = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.fetch_rules, mod.save_rule, True
+    except Exception:
+        return None, None, False
 
-    def _on_status(msg):
-        _counter[0] += 1
-        status_text.text(msg)
-        progress_bar.progress(min(_counter[0] / max(total, 1), 1.0))
 
-    raw = run_canslim_screen(tickers, status_callback=_on_status)
-
-    progress_bar.empty()
-    status_text.empty()
-
-    # Convert to the legacy column format the rest of dashboard.py expects
-    results = []
-    for r in raw:
-        results.append({
-            "Ticker":     r["ticker"],
-            "Match":      "✅" if r["buy_zone"] else "❌",
-            "Price":      f"${r['price']:.2f}" if r["price"] else "N/A",
-            "RS":         r["rs"],
-            "Vol Surge":  "✅" if r["vol_surge"] else "❌",
-            "Trend (M)":  "✅" if r["above_200dma"] else "❌",
-            "Pivot":      "✅" if r["near_pivot"] else "❌",
-            "52W High %": f"{r['high_52w_pct']:.1f}%",
-            "CANSLIM":    r["canslim_letters"],
-            "Score":      r["score"],
-            "Buy Zone":   r["buy_zone"],
-            # Sector info now comes from FMP (not yfinance .info)
-            "_sector":    r["sector"],
-            "_industry":  r["industry"],
-            "_name":      r["name"],
-        })
-    return results
-
-# Calculate price changes for various time periods
-def calculate_price_changes(tickers):
-    """Calculate price percentage changes for 1D, 5D, 1M, 3M, 6M, 1Y, YTD"""
+# Price performance table (kept dashboard-only)
+def _calculate_price_changes(tickers):
     price_data = []
     end_date = datetime.now(pytz.timezone('America/Toronto')).date()
-
     for ticker in tickers:
         try:
-            stock = yf.Ticker(ticker)
-            hist = stock.history(period="1y")
-
+            hist = yf.Ticker(ticker).history(period="1y")
             if len(hist) == 0:
                 continue
-
             current_price = hist['Close'].iloc[-1]
-
-            # Calculate returns for each period
             changes = {'Ticker': ticker, 'Current': f"${current_price:.2f}"}
-
-            # 1 Day
-            if len(hist) >= 1:
-                price_1d_ago = hist['Close'].iloc[-2] if len(hist) > 1 else hist['Close'].iloc[-1]
-                changes['1D'] = ((current_price - price_1d_ago) / price_1d_ago) * 100
-
-            # 5 Days
-            if len(hist) >= 5:
-                price_5d_ago = hist['Close'].iloc[-5]
-                changes['5D'] = ((current_price - price_5d_ago) / price_5d_ago) * 100
-
-            # 1 Month
-            if len(hist) >= 21:
-                price_1m_ago = hist['Close'].iloc[-21]
-                changes['1M'] = ((current_price - price_1m_ago) / price_1m_ago) * 100
-
-            # 3 Months
-            if len(hist) >= 63:
-                price_3m_ago = hist['Close'].iloc[-63]
-                changes['3M'] = ((current_price - price_3m_ago) / price_3m_ago) * 100
-
-            # 6 Months
-            if len(hist) >= 126:
-                price_6m_ago = hist['Close'].iloc[-126]
-                changes['6M'] = ((current_price - price_6m_ago) / price_6m_ago) * 100
-
-            # 1 Year
-            if len(hist) >= 252:
-                price_1y_ago = hist['Close'].iloc[-252]
-                changes['1Y'] = ((current_price - price_1y_ago) / price_1y_ago) * 100
-
-            # YTD (Year to Date)
+            periods = {'1D': 2, '5D': 5, '1M': 21, '3M': 63, '6M': 126, '1Y': 252}
+            for label, n in periods.items():
+                if len(hist) >= n:
+                    past = hist['Close'].iloc[-n]
+                    changes[label] = ((current_price - past) / past) * 100
             year_start = hist[hist.index.year == end_date.year]
             if len(year_start) > 0:
-                price_ytd = year_start['Close'].iloc[0]
-                changes['YTD'] = ((current_price - price_ytd) / price_ytd) * 100
-
+                changes['YTD'] = ((current_price - year_start['Close'].iloc[0])
+                                  / year_start['Close'].iloc[0]) * 100
             price_data.append(changes)
-        except:
+        except Exception:
             continue
-
     return pd.DataFrame(price_data)
 
-# Display CANSLIM badges for each stock
-def display_canslim_badges(df):
-    """Display CANSLIM indicators as a table"""
-    canslim_cols = []
-    for _, row in df.iterrows():
-        rs_val = row.get('RS', 0)
-        rs_flag = "✅ L" if rs_val > 70 else "❌ L"
-        vol_flag = "✅ S" if row.get('Vol Surge', '❌') == '✅' else "❌ S"
-        trend_flag = "✅ M" if row.get('Trend (M)', '❌') == '✅' else "❌ M"
-        pivot_flag = "✅ N" if row.get('Pivot', '❌') == '✅' else "❌ N"
-
-        canslim_cols.append({
-            'Ticker': row['Ticker'],
-            'L': rs_flag,
-            'S': vol_flag,
-            'M': trend_flag,
-            'N': pivot_flag,
-            'RS Score': rs_val,
-            'CANSLIM': row.get('CANSLIM', 'N/A'),
-            'Score': row.get('Score', 0)
-        })
-
-    return pd.DataFrame(canslim_cols)
-
-# Display sector/sub-sector breakdown
-def display_sector_subsector_breakdown(df):
-    """Display stocks in simple sector, industry, and description table."""
-    sector_data = []
-    for _, row in df.iterrows():
-        sector_data.append({
-            'Ticker':   row['Ticker'],
-            'Name':     row.get('_name', row['Ticker']),
-            'Sector':   row.get('_sector', 'Unknown'),
-            'Industry': row.get('_industry', 'Unknown'),
-            'Price':    row.get('Price', 'N/A'),
-            'RS':       row.get('RS', 0),
-            'Match':    row.get('Match', '❌'),
-        })
-
-    sector_df = pd.DataFrame(sector_data).sort_values(['Sector', 'Industry', 'Ticker'])
-    st.dataframe(sector_df, use_container_width=True, hide_index=True,
-                column_config={
-                    "Ticker":   st.column_config.TextColumn(width="small"),
-                    "Name":     st.column_config.TextColumn(width="medium"),
-                    "Sector":   st.column_config.TextColumn(width="medium"),
-                    "Industry": st.column_config.TextColumn(width="medium"),
-                    "Price":    st.column_config.TextColumn(width="small"),
-                    "RS":       st.column_config.NumberColumn(width="small", format="%d"),
-                    "Match":    st.column_config.TextColumn(width="small"),
-                })
 
 # ============= AUTHENTICATION UI =============
 if not st.session_state.authenticated:
     st.title("🔐 Stock Buy Zone Analyzer - Login")
-
     col1, col2, col3 = st.columns([1, 2, 1])
-
     with col2:
         st.markdown("### Enter your credentials")
-
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
-
         if st.button("🔓 Login", use_container_width=True, type="primary"):
-            # Fetch users (cached for 1 hour)
             users = fetch_users_from_sheet()
-
             if login(users, username, password):
                 st.success(f"✅ Welcome, {st.session_state.user_name}!")
                 st.rerun()
             else:
                 st.error("❌ Invalid username or password")
-
         st.divider()
         st.info("💡 Contact the administrator to request access")
 
 else:
-    # ============= MAIN TRADING DASHBOARD (ONLY IF AUTHENTICATED) =============
+    # ============= MAIN DASHBOARD =============
+    from src.ui import render_holdings_matrix, render_action_items, render_rule_settings
+    from src.signals import run_signals_watchlist
 
-    # Sidebar with user info and logout
     st.sidebar.markdown(f"### 👤 {st.session_state.user_name}")
-
     if st.sidebar.button("🚪 Logout", use_container_width=True):
         logout()
         st.rerun()
@@ -425,212 +297,99 @@ else:
     st.sidebar.header("⚙️ Configuration")
     refresh_button = st.sidebar.button("🔄 Run Analysis", use_container_width=True)
 
-    st.title("📊 StockScreener - CANSLIM Analyzer")
-    st.markdown("""
-    **CANSLIM Stock Screening System** (William O'Neill)
-    - **L**: Leader stocks (RS Rating > 70)
-    - **S**: Strong volume surge (1.5x average)
-    - **M**: Uptrend (above 200-day moving average)
-    - **N**: New highs/pivot breakout
-    """)
+    st.title("📊 StockScreener — O'Neil / CAN SLIM")
 
-    # Analysis logic
-    if refresh_button or 'analysis_results' not in st.session_state:
-        tickers = fetch_tickers()
+    fetch_rules, save_rule, rules_available = _load_rules()
+    rules = []
+    if rules_available:
+        try:
+            rules = fetch_rules()
+        except Exception as e:
+            st.warning(f"Could not load rules: {e}")
 
-        if tickers:
-            st.info(f"📊 Found {len(tickers)} tickers to analyze")
-            results = analyze_stocks(tickers)
-            st.session_state.analysis_results = results
-            toronto_tz = pytz.timezone('America/Toronto')
-            st.session_state.last_update = datetime.now(toronto_tz)
+    tab_analysis, tab_rules = st.tabs(["📊 Analysis & Actions", "⚙️ Rule Settings"])
+
+    with tab_rules:
+        st.header("⚙️ Rule Settings")
+        st.markdown("Same rules applied to your portfolio — view-only here, changes save via the portfolio page.")
+        if rules:
+            render_rule_settings(rules, save_rule_fn=None)
         else:
-            st.error("Could not fetch tickers from Google Sheets")
-            st.stop()
+            st.warning("Rules not available. Check that the **Rules** tab exists in StockTracker.")
 
-    # Display results
-    if 'analysis_results' in st.session_state:
-        results = st.session_state.analysis_results
-        df = pd.DataFrame(results)
-
-        # Filter buy zone stocks
-        buy_zone_stocks = df[df['Buy Zone'] == True].copy()
-        no_signal_stocks = df[df['Buy Zone'] == False].copy()
-
-        # Metrics
-        col1, col2, col3, col4 = st.columns(4)
-
+    with tab_analysis:
+        col1, col2 = st.columns([1, 1])
         with col1:
-            st.metric("✅ CANSLIM Match", len(buy_zone_stocks), f"of {len(df)}")
-
+            run_btn = st.button("▶️ Run Analysis", type="primary", use_container_width=True)
         with col2:
-            leader_count = len(df[df['RS'] > 70])
-            st.metric("📈 Leaders (L)", leader_count, f"{(leader_count/len(df)*100):.0f}%")
+            if st.button("🗑️ Clear", use_container_width=True):
+                st.session_state.pop("watchlist_result", None)
+                st.session_state.pop("watchlist_ts", None)
+                st.rerun()
 
-        with col3:
-            vol_count = len(df[df['Vol Surge'] == '✅'])
-            st.metric("📊 Vol Surge (S)", vol_count, f"{(vol_count/len(df)*100):.0f}%")
+        if "watchlist_ts" in st.session_state:
+            st.caption(f"Last run: {st.session_state['watchlist_ts']}")
 
-        with col4:
-            st.metric("Last Update", st.session_state.last_update.strftime('%I:%M %p'),
-                     st.session_state.last_update.strftime('%m/%d/%Y'))
+        if run_btn or refresh_button or "watchlist_result" in st.session_state:
+            if run_btn or refresh_button:
+                tickers = fetch_tickers()
+                if not tickers:
+                    st.error("No tickers found in Google Sheets.")
+                    st.stop()
+                st.info(f"📊 Analyzing {len(tickers)} watchlist stocks against all O'Neil rules…")
+                with st.spinner("Fetching live technical data… (30–60 sec)"):
+                    result = run_signals_watchlist(tickers, rules)
+                    st.session_state["watchlist_result"] = result
+                    st.session_state["watchlist_ts"] = datetime.now(
+                        pytz.timezone('America/Toronto')).strftime('%d %b %Y %I:%M %p')
 
-        st.divider()
+            result   = st.session_state.get("watchlist_result", {})
+            holdings = result.get("holdings", [])
+            actions  = result.get("actions",  [])
 
-        # Sector Distribution Pie Chart
-        st.subheader("📊 Stock Distribution by Sector")
-        sector_counts = {}
-        for _, row in df.iterrows():
-            sector = row.get('_sector', 'Unknown')
-            if sector:
-                sector_counts[sector] = sector_counts.get(sector, 0) + 1
+            # Summary metrics
+            if holdings:
+                immediate = sum(1 for h in holdings if h["worst_urgency"] == "IMMEDIATE")
+                this_week = sum(1 for h in holdings if h["worst_urgency"] == "THIS WEEK")
+                ok        = sum(1 for h in holdings if h["worst_urgency"] == "NONE")
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Total Stocks", len(holdings))
+                col2.metric("🔴 Immediate",  immediate)
+                col3.metric("🟡 This Week",  this_week)
+                col4.metric("✅ OK",          ok)
 
-        if sector_counts:
-            # Create pie chart
-            fig = go.Figure(data=[go.Pie(
-                labels=list(sector_counts.keys()),
-                values=list(sector_counts.values()),
-                hole=0.3
-            )])
-            fig.update_layout(
-                title="Stocks by Sector",
-                height=400,
-                showlegend=True
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            # Holdings matrix
+            st.header("📋 All Stocks — Rule Results")
+            render_holdings_matrix(holdings, rules, show_account=False)
 
-        st.divider()
+            st.divider()
 
-        # CANSLIM Match Stocks Section
-        if len(buy_zone_stocks) > 0:
-            st.subheader(f"✅ CANSLIM Matches ({len(buy_zone_stocks)} stocks)")
+            # Action items
+            st.header("🎯 Action Items")
+            render_action_items(actions, show_account=False)
 
-            canslim_display = buy_zone_stocks[['Ticker', 'Price', 'RS', 'Vol Surge', 'Trend (M)', 'Pivot', '52W High %', 'CANSLIM', 'Score']].copy()
+            st.divider()
 
-            st.dataframe(
-                canslim_display,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Ticker": st.column_config.TextColumn(width="small"),
-                    "Price": st.column_config.TextColumn(width="small"),
-                    "RS": st.column_config.NumberColumn(width="small", format="%d"),
-                    "Vol Surge": st.column_config.TextColumn(width="small"),
-                    "Trend (M)": st.column_config.TextColumn(width="small"),
-                    "Pivot": st.column_config.TextColumn(width="small"),
-                    "52W High %": st.column_config.TextColumn(width="small"),
-                    "CANSLIM": st.column_config.TextColumn(width="medium"),
-                    "Score": st.column_config.NumberColumn(width="small"),
-                }
-            )
-
+            # Price performance tab
+            with st.expander("📈 Price Performance", expanded=False):
+                tickers_list = [h["symbol"] for h in holdings]
+                perf_df = _calculate_price_changes(tickers_list)
+                if len(perf_df) > 0:
+                    for col in ['1D', '5D', '1M', '3M', '6M', '1Y', 'YTD']:
+                        if col in perf_df.columns:
+                            perf_df[col] = perf_df[col].apply(
+                                lambda x: f"{x:+.2f}%" if pd.notna(x) else "N/A")
+                    st.dataframe(perf_df, use_container_width=True, hide_index=True)
+                else:
+                    st.warning("Unable to fetch price performance data.")
 
         else:
-            st.info("No stocks currently in buy zone. Check back later!")
-
-        st.divider()
-
-        # Additional Analysis Tabs
-        tab_canslim, tab_sectors, tab_performance = st.tabs(["📊 CANSLIM Analysis", "🏭 Sectors & Industries", "📈 Price Performance"])
-
-        with tab_canslim:
-            st.subheader("CANSLIM Breakdown - Stock Screening Indicators")
-            st.markdown("""
-            **CANSLIM (William O'Neil) Criteria:**
-            - **C** — Current Quarterly Earnings
-            - **A** — Annual Earnings Growth
-            - **N** — New Highs / Pivot Points
-            - **S** — Supply & Demand (Volume Surge)
-            - **L** — Leader (RS Rating > 70)
-            - **I** — Institutional Sponsorship
-            - **M** — Market Trend (Above 200-DMA)
-            """)
-            canslim_df = display_canslim_badges(df)
-            st.dataframe(canslim_df, use_container_width=True, hide_index=True)
-
-        with tab_sectors:
-            st.subheader("Stock Distribution by Sector & Sub-sector")
-            st.markdown("Stocks grouped by industry classification (via FMP):")
-            display_sector_subsector_breakdown(df)
-
-        with tab_performance:
-            st.subheader("Price Performance (% Change)")
-            st.markdown("Stock price percentage changes over various time periods")
-
-            tickers_list = df['Ticker'].tolist()
-            perf_df = calculate_price_changes(tickers_list)
-
-            if len(perf_df) > 0:
-                # Format percentage columns with color
-                for col in ['1D', '5D', '1M', '3M', '6M', '1Y', 'YTD']:
-                    if col in perf_df.columns:
-                        perf_df[col] = perf_df[col].apply(lambda x: f"{x:+.2f}%" if pd.notna(x) else "N/A")
-
-                st.dataframe(perf_df, use_container_width=True, hide_index=True,
-                           column_config={
-                               "Ticker": st.column_config.TextColumn(width="small"),
-                               "Current": st.column_config.TextColumn(width="small"),
-                               "1D": st.column_config.TextColumn(width="small"),
-                               "5D": st.column_config.TextColumn(width="small"),
-                               "1M": st.column_config.TextColumn(width="small"),
-                               "3M": st.column_config.TextColumn(width="small"),
-                               "6M": st.column_config.TextColumn(width="small"),
-                               "1Y": st.column_config.TextColumn(width="small"),
-                               "YTD": st.column_config.TextColumn(width="small"),
-                           })
-            else:
-                st.warning("Unable to fetch price performance data")
-
-        st.divider()
-
-        # All stocks with filtering
-        with st.expander("📊 View All Stocks", expanded=False):
-            st.subheader("All Stocks Analysis")
-
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                show_buy_zone = st.checkbox("Buy Zone Only", value=False)
-
-            with col2:
-                sort_by = st.selectbox("Sort by", ["Ticker", "RS Score", "CANSLIM Score"])
-
-            with col3:
-                search = st.text_input("Search ticker", "")
-
-            display_df = df.copy()
-
-            if show_buy_zone:
-                display_df = display_df[display_df['Buy Zone'] == True]
-
-            if search:
-                display_df = display_df[display_df['Ticker'].str.contains(search.upper())]
-
-            if sort_by == "RS Score":
-                display_df = display_df.sort_values('RS', ascending=False)
-            elif sort_by == "CANSLIM Score":
-                display_df = display_df.sort_values('Score', ascending=False)
-            else:
-                display_df = display_df.sort_values('Ticker')
-
-            display_cols = display_df[['Ticker', 'Match', 'Price', 'RS', 'Vol Surge', 'Trend (M)', 'Pivot', 'CANSLIM', 'Score']]
-
-            st.dataframe(display_cols, use_container_width=True, hide_index=True)
-
-            csv = display_df.to_csv(index=False)
-            toronto_tz = pytz.timezone('America/Toronto')
-            current_time = datetime.now(toronto_tz).strftime('%Y%m%d_%H%M%S')
-            st.download_button(
-                label="📥 Download CSV",
-                data=csv,
-                file_name=f"stock_analysis_{current_time}.csv",
-                mime="text/csv"
-            )
+            st.info("Click **▶️ Run Analysis** to evaluate all O'Neil rules against the watchlist.")
 
     st.divider()
     st.markdown(f"""
     <div style="text-align: center; color: #666; font-size: 12px; margin-top: 2rem;">
-        <p>📊 StockScreener - CANSLIM Analyzer | Logged in as: {st.session_state.user_name}</p>
-        <p>Data from Yahoo Finance | Google Sheets Integration</p>
+        <p>📊 StockScreener — O'Neil / CAN SLIM | Logged in as: {st.session_state.user_name}</p>
+        <p>Data: Yahoo Finance (price) · FMP (sector) · Google Sheets (rules & watchlist)</p>
     </div>
     """, unsafe_allow_html=True)
