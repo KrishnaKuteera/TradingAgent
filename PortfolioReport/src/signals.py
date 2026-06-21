@@ -415,10 +415,13 @@ def _eval_new_high_low_vol(rule, tech):
     near_high = price >= high_52w * 0.98
     low_vol   = vol_r is not None and vol_r < vol_thresh
     if near_high and low_vol:
-        return _result(rule, WARN, f"Near 52W high on {vol_r:.1f}x vol",
+        return _result(rule, WARN, f"Near 52W high on weak vol ({vol_r:.1f}x avg, need ≥{vol_thresh:.1f}x)",
                        action="Caution", urgency="MONITOR",
-                       detail="Near new high but volume is weak — unconfirmed breakout.")
-    return _result(rule, PASS, f"Vol {vol_r:.1f}x avg" if vol_r else "N/A")
+                       detail="Near new high but volume is below threshold — unconfirmed breakout. O'Neil: need 40-50% above avg volume.")
+    if near_high:
+        return _result(rule, PASS, f"Near 52W high on strong vol ({vol_r:.1f}x avg)" if vol_r else "Near 52W high",
+                       detail="Near new high with healthy volume — valid breakout signal.")
+    return _result(rule, PASS, f"Not near 52W high — vol {vol_r:.1f}x avg" if vol_r else "Not near 52W high")
 
 
 def _eval_distribution_volume(rule, tech):

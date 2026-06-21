@@ -20,12 +20,14 @@ def _trading_rules_url() -> str:
 # ---------------------------------------------------------------------------
 
 _MARKET_RULES    = {"canslim_m", "market_golden_cross", "market_death_cross", "market_distribution_day"}
-_BUY_RULES       = {"canslim_l", "canslim_s", "sell_new_high_low_vol"}
+_BUY_RULES       = {"canslim_l", "canslim_s"}
+# sell_new_high_low_vol is a caution/sell signal, not a buy signal — kept in sell_tech
 _BUY_CATEGORIES  = {"CANSLIM", "BUY_ENTRY"}
 _SELL_TECH_RULES = {
     "sell_below_200", "sell_sma50_break", "sell_poor_rs", "sell_distribution_volume",
     "sell_peak_decline", "sell_consecutive_down", "sell_closing_low",
     "sell_above_200_extended", "sell_exhaustion_sharan", "sell_failed_breakout",
+    "sell_new_high_low_vol",  # near new high on weak volume = unconfirmed breakout
 }
 _SELL_POS_RULES  = {"position_limit", "sell_hard_stop", "sell_alt_stop", "sell_take_profits", "sell_climax_run"}
 
@@ -552,10 +554,10 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
         h["symbol"],
     ))
 
-    # Build display DataFrame — column order: Stock | Verdict | Buy | Sell | [Account | P&L] | Reason
+    # Build display DataFrame — Reason is NOT in the dataframe (can't wrap in st.dataframe)
+    # It is shown as a styled callout below the table for the selected row.
     rows = []
     for h in enriched:
-        sym   = h["symbol"].split(".")[0]  # strip .TO etc for cleaner display
         tv_url = f"https://www.tradingview.com/chart/?symbol={h['symbol'].replace('.TO', ':TSX').replace('.', ':')}"
         row = {
             "Stock":   f"{h['symbol']}  {_fmt_price(h['current_price'])}",
@@ -563,7 +565,6 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
             "Verdict": h["_label"],
             "Buy ✓":   f"{h['_buy_pass']}/{h['_buy_total']}",
             "Sell ✗":  f"{h['_sell_fail']}/{h['_sell_total']}",
-            "Reason":  h["_reason"],  # full text, let it wrap
         }
         if show_account:
             row["Account"] = h["account"]
@@ -572,11 +573,9 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
 
     df = pd.DataFrame(rows)
 
-    # Column order
     base_cols = ["Stock", "TV", "Verdict", "Buy ✓", "Sell ✗"]
     if show_account:
         base_cols += ["Account", "P&L"]
-    base_cols.append("Reason")
     df = df[base_cols]
 
     col_cfg = {
@@ -585,7 +584,6 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
         "Verdict": st.column_config.TextColumn("Verdict",  width="small"),
         "Buy ✓":   st.column_config.TextColumn("Buy ✓",    width="small"),
         "Sell ✗":  st.column_config.TextColumn("Sell ✗",   width="small"),
-        "Reason":  st.column_config.TextColumn("Reason",   width="large"),
     }
     if show_account:
         col_cfg["Account"] = st.column_config.TextColumn("Account", width="small")
@@ -601,22 +599,39 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
         column_config=col_cfg,
     )
 
-    # Detail section
-    st.divider()
+    # Track selection
     rows_sel = sel.selection.get("rows", []) if sel else []
     if rows_sel:
-        idx = rows_sel[0]
-        st.session_state[f"{key}_selected"] = enriched[idx]["symbol"]
+        st.session_state[f"{key}_selected"] = enriched[rows_sel[0]]["symbol"]
 
     selected_sym = st.session_state.get(f"{key}_selected")
-    if selected_sym:
-        match = next((h for h in enriched if h["symbol"] == selected_sym), None)
-        if match:
-            tv_url = f"https://www.tradingview.com/chart/?symbol={match['symbol'].replace('.TO', ':TSX').replace('.', ':')}"
-            _render_detail(match, rules_lookup)
-            st.markdown(f"[Open {match['symbol']} on TradingView ↗]({tv_url})")
+    selected_h   = next((h for h in enriched if h["symbol"] == selected_sym), None) if selected_sym else None
+
+    # Reason callout — shown for selected row, readable full text outside dataframe
+    st.markdown("")
+    if selected_h:
+        vtype = selected_h["_vtype"]
+        color = {"buy": "#d4edda", "watch": "#fff3cd", "sell": "#f8d7da",
+                 "hold": "#cce5ff", "mon": "#e2e3e5"}.get(vtype, "#f0f2f6")
+        border = {"buy": "#28a745", "watch": "#ffc107", "sell": "#dc3545",
+                  "hold": "#0066cc", "mon": "#6c757d"}.get(vtype, "#999")
+        import html as _html
+        reason_safe = _html.escape(selected_h["_reason"])
+        st.markdown(
+            f'<div style="background:{color};border-left:4px solid {border};'
+            f'padding:10px 14px;border-radius:4px;font-size:0.88rem;line-height:1.6;">'
+            f'<strong>{selected_h["symbol"]}</strong> — {reason_safe}</div>',
+            unsafe_allow_html=True,
+        )
     else:
-        st.caption("Click any row to see the full CAN SLIM breakdown and signals for that stock.")
+        st.caption("⬆ Click any row to see its reason and full CAN SLIM breakdown below.")
+
+    # Full detail section
+    st.divider()
+    if selected_h:
+        tv_url = f"https://www.tradingview.com/chart/?symbol={selected_h['symbol'].replace('.TO', ':TSX').replace('.', ':')}"
+        _render_detail(selected_h, rules_lookup)
+        st.markdown(f"[Open {selected_h['symbol']} on TradingView ↗]({tv_url})")
 
 
 # ---------------------------------------------------------------------------
