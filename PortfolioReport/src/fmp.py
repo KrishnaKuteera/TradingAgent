@@ -80,6 +80,31 @@ def fetch_market_quotes(symbols: list = None) -> dict:
     return result
 
 
+def fetch_news(symbol: str, limit: int = 3) -> list:
+    """Fetch recent news headlines for a symbol (free tier).
+
+    Returns list of {title, publishedDate, url}.
+    """
+    key = _api_key()
+    if not key:
+        return []
+    try:
+        resp = requests.get(
+            f"{_BASE}/news",
+            params={"symbols": _fmp_symbol(symbol), "limit": limit, "apikey": key},
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            return []
+        data = resp.json()
+        if not isinstance(data, list):
+            return []
+        return [{"title": d.get("title", ""), "date": d.get("publishedDate", "")[:10]}
+                for d in data if d.get("title")]
+    except Exception:
+        return []
+
+
 def fetch_spy_quote() -> dict:
     """Backwards-compat alias — returns SPY quote dict."""
     quotes = fetch_market_quotes(["SPY"])

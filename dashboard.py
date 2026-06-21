@@ -349,21 +349,6 @@ else:
 
             render_decision_view(holdings, rules, show_account=False, key="watchlist")
 
-            st.divider()
-
-            # Price performance tab
-            with st.expander("📈 Price Performance", expanded=False):
-                tickers_list = [h["symbol"] for h in holdings]
-                perf_df = _calculate_price_changes(tickers_list)
-                if len(perf_df) > 0:
-                    for col in ['1D', '5D', '1M', '3M', '6M', '1Y', 'YTD']:
-                        if col in perf_df.columns:
-                            perf_df[col] = perf_df[col].apply(
-                                lambda x: f"{x:+.2f}%" if pd.notna(x) else "N/A")
-                    st.dataframe(perf_df, use_container_width=True, hide_index=True)
-                else:
-                    st.warning("Unable to fetch price performance data.")
-
         else:
             st.info("Click **▶️ Run Analysis** to evaluate all O'Neil rules against the watchlist.")
 
