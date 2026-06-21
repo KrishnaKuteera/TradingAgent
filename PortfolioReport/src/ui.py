@@ -1,7 +1,24 @@
 """Shared Streamlit UI components used by both portfolio analysis and dashboard."""
 
+import math
 import streamlit as st
 import pandas as pd
+
+
+def _fmt_price(val) -> str:
+    try:
+        f = float(val)
+        return f"${f:.2f}" if math.isfinite(f) and f > 0 else "N/A"
+    except Exception:
+        return "N/A"
+
+
+def _fmt_pct(val) -> str:
+    try:
+        f = float(val)
+        return f"{f:+.1f}%" if math.isfinite(f) and f != 0.0 else "—"
+    except Exception:
+        return "—"
 
 STATUS_ICON   = {"PASS": "✅", "FAIL": "❌", "WARN": "⚠️", "N/A": "—"}
 URGENCY_BADGE = {
@@ -32,8 +49,8 @@ def render_holdings_matrix(holdings: list, rules: list, show_account: bool = Tru
                "Symbol": h["symbol"]}
         if show_account:
             row["Account"] = h["account"]
-        row["P&L %"] = f"{h['pl_pct']:+.1f}%" if h["pl_pct"] != 0.0 else "—"
-        row["Price"]  = f"${h['current_price']:.2f}" if h["current_price"] else "N/A"
+        row["P&L %"] = _fmt_pct(h["pl_pct"])
+        row["Price"]  = _fmt_price(h["current_price"])
         row["Trend"]  = h["trend"]
         for rule in auto_rules:
             res = rule_map.get(rule["rule_id"])
@@ -77,6 +94,8 @@ def render_action_items(actions: list, show_account: bool = True):
 
     def _show(items):
         df = pd.DataFrame(items)
+        if "pl_pct" in df.columns:
+            df["pl_pct"] = df["pl_pct"].apply(_fmt_pct)
         visible = [c for c in df.columns if c not in _hide]
         st.dataframe(df[visible], use_container_width=True, hide_index=True)
 
