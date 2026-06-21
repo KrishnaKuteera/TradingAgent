@@ -105,6 +105,95 @@ def fetch_news(symbol: str, limit: int = 3) -> list:
         return []
 
 
+def fetch_earnings_growth(symbol: str) -> dict:
+    """Fetch C and A data: quarterly EPS growth and 3-yr annual EPS growth.
+
+    Returns dict with keys:
+      c_eps_growth, c_rev_growth, c_eps_current, c_eps_prior, c_quarter,
+      a_eps_growth_3yr, a_roe, a_eps_years
+    Falls back to yfinance income_stmt if FMP fails.
+    """
+    key = _api_key()
+    result = {
+        "c_eps_growth": None, "c_rev_growth": None,
+        "c_eps_current": None, "c_eps_prior": None, "c_quarter": None,
+        "a_eps_growth_3yr": None, "a_roe": None, "a_eps_years": [],
+    }
+
+    fmp_sym = _fmp_symbol(symbol)
+
+    if key:
+        try:
+            # Quarterly income statement
+            r = requests.get(f"{_BASE}/income-statement", params={
+                "symbol": fmp_sym, "period": "quarter", "limit": 8, "apikey": key,
+            }, timeout=15)
+            if r.status_code == 200:
+                data = r.json()
+                if isinstance(data, list) and len(data) >= 5:
+                    cur_q  = data[0]
+                    yago_q = data[4]  # same quarter last year
+                    eps_cur  = cur_q.get("eps", 0) or 0
+                    eps_prior = yago_q.get("eps", 0) or 0
+                    rev_cur  = cur_q.get("revenue", 0) or 0
+                    rev_prior = yago_q.get("revenue", 0) or 0
+                    if eps_prior != 0:
+                        result["c_eps_growth"] = (eps_cur - eps_prior) / abs(eps_prior) * 100
+                    if rev_prior != 0:
+                        result["c_rev_growth"] = (rev_cur - rev_prior) / abs(rev_prior) * 100
+                    result["c_eps_current"] = eps_cur
+                    result["c_eps_prior"]   = eps_prior
+                    result["c_quarter"]     = cur_q.get("date", "")[:7]
+            # Annual income statement
+            r2 = requests.get(f"{_BASE}/income-statement", params={
+                "symbol": fmp_sym, "period": "annual", "limit": 4, "apikey": key,
+            }, timeout=15)
+            if r2.status_code == 200:
+                adata = r2.json()
+                if isinstance(adata, list) and len(adata) >= 2:
+                    eps_list = [d.get("eps", 0) or 0 for d in adata]
+                    growths = []
+                    for i in range(min(3, len(eps_list) - 1)):
+                        if eps_list[i + 1] != 0:
+                            growths.append((eps_list[i] - eps_list[i + 1]) / abs(eps_list[i + 1]) * 100)
+                    if growths:
+                        result["a_eps_growth_3yr"] = sum(growths) / len(growths)
+                    result["a_eps_years"] = [
+                        {"year": d.get("date", "")[:4], "eps": d.get("eps", 0)} for d in adata[:4]
+                    ]
+        except Exception:
+            pass
+
+    # Fallback: yfinance quarterly financials (works on cloud via download endpoint)
+    if result["c_eps_growth"] is None:
+        try:
+            import yfinance as yf
+            tk = yf.Ticker(symbol)
+            q = tk.quarterly_income_stmt
+            if q is not None and not q.empty and "Net Income" in q.index:
+                ni = q.loc["Net Income"].dropna()
+                if len(ni) >= 5:
+                    cur_ni  = float(ni.iloc[0])
+                    yago_ni = float(ni.iloc[4])
+                    if yago_ni != 0:
+                        result["c_eps_growth"] = (cur_ni - yago_ni) / abs(yago_ni) * 100
+            a = tk.income_stmt
+            if a is not None and not a.empty and "Net Income" in a.index:
+                ni_a = a.loc["Net Income"].dropna()
+                if len(ni_a) >= 2:
+                    growths = []
+                    for i in range(min(3, len(ni_a) - 1)):
+                        prev = float(ni_a.iloc[i + 1])
+                        if prev != 0:
+                            growths.append((float(ni_a.iloc[i]) - prev) / abs(prev) * 100)
+                    if growths:
+                        result["a_eps_growth_3yr"] = sum(growths) / len(growths)
+        except Exception:
+            pass
+
+    return result
+
+
 def fetch_spy_quote() -> dict:
     """Backwards-compat alias — returns SPY quote dict."""
     quotes = fetch_market_quotes(["SPY"])

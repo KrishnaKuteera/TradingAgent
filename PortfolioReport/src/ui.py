@@ -192,59 +192,98 @@ def _render_price_performance(symbol: str):
 # ---------------------------------------------------------------------------
 
 def _render_canslim_section(holding: dict, rules_lookup: dict):
-    """Render full C/A/N/S/L/I/M breakdown with news and manual-review placeholders."""
+    """Render full C/A/N/S/L/I/M breakdown with live earnings data and news."""
     st.markdown("#### 📊 CAN SLIM analysis")
 
-    symbol      = holding["symbol"]
-    results     = holding["rule_results"]
-    tech        = {}  # will be filled from rule values where possible
+    symbol  = holding["symbol"]
+    results = holding["rule_results"]
 
-    # Pull what we already computed from signals
     canslim_l = next((r for r in results if r["rule_id"] == "canslim_l"), None)
     canslim_s = next((r for r in results if r["rule_id"] == "canslim_s"), None)
     canslim_m = next((r for r in results if r["rule_id"] == "canslim_m"), None)
-    near_high  = next((r for r in results if r["rule_id"] == "sell_new_high_low_vol"), None)
-    peak       = next((r for r in results if r["rule_id"] == "sell_peak_decline"), None)
 
-    # Try to fetch news (free tier — graceful fallback)
+    # Fetch earnings growth (C and A) — graceful fallback
+    eg = {}
+    try:
+        from .fmp import fetch_earnings_growth
+        eg = fetch_earnings_growth(symbol)
+    except Exception:
+        pass
+
+    # News for N
     news_items = []
     try:
         from .fmp import fetch_news
         news_items = fetch_news(symbol, limit=3)
     except Exception:
         pass
+    news_str = " | ".join(f"{n['date']}: {n['title'][:90]}" for n in news_items) if news_items else ""
 
-    news_str = ""
-    if news_items:
-        news_str = " | ".join(f"{n['date']}: {n['title'][:80]}" for n in news_items)
+    # Format C values
+    def _pct_str(val, suffix=""):
+        if val is None: return "—"
+        sign = "+" if val >= 0 else ""
+        return f"{sign}{val:.1f}%{suffix}"
+
+    c_eps_g  = eg.get("c_eps_growth")
+    c_rev_g  = eg.get("c_rev_growth")
+    c_qtr    = eg.get("c_quarter", "")
+    c_eps_v  = eg.get("c_eps_current")
+    c_prior  = eg.get("c_eps_prior")
+
+    c_value = "—"
+    if c_eps_g is not None:
+        c_value = f"EPS {_pct_str(c_eps_g)} YoY"
+        if c_eps_v is not None and c_prior is not None:
+            c_value += f"  (${c_eps_v:.2f} vs ${c_prior:.2f})"
+        if c_rev_g is not None:
+            c_value += f"  |  Rev {_pct_str(c_rev_g)} YoY"
+        if c_qtr:
+            c_value += f"  [{c_qtr}]"
+
+    c_status = "—"
+    if c_eps_g is not None:
+        c_status = "✅" if c_eps_g >= 25 else ("⚠️" if c_eps_g >= 0 else "❌")
+
+    # Format A values
+    a_g3   = eg.get("a_eps_growth_3yr")
+    a_yrs  = eg.get("a_eps_years", [])
+    a_value = "—"
+    if a_g3 is not None:
+        a_value = f"3-yr avg EPS growth: {_pct_str(a_g3)}"
+        if a_yrs:
+            detail_parts = [f"{y['year']}: ${y['eps']:.2f}" for y in a_yrs if y.get("eps")]
+            a_value += "  |  " + " → ".join(detail_parts)
+
+    a_status = "—"
+    if a_g3 is not None:
+        a_status = "✅" if a_g3 >= 25 else ("⚠️" if a_g3 >= 0 else "❌")
 
     rows = [
-        # C — Current quarterly earnings (manual)
+        # C — Current quarterly earnings
         {
             "Letter": "C",
             "Criterion": "Current quarterly EPS & revenue growth",
-            "Status": "📋 Manual review",
-            "Action": "—",
-            "Value": "—",
+            "Status": c_status,
+            "Action": "Buy" if c_status == "✅" else ("Watch" if c_status == "⚠️" else "Avoid") if c_status != "—" else "—",
+            "Value": c_value,
             "Rule Description": (
-                # TODO: DeepVue screenshot upload — parse EPS & revenue growth from screenshot
-                "O'Neil: EPS growth ≥ 25% vs same quarter last year, accelerating. "
-                "Revenue growth should also accelerate. "
-                "Upload DeepVue screenshot to auto-fill."
+                "O'Neil: EPS growth ≥ 25% vs same quarter last year, accelerating quarter over quarter. "
+                "Revenue growth should confirm — both rising together = institutional-grade setup. "
+                # TODO: DeepVue screenshot upload — to override with audited EPS data
             ),
         },
-        # A — Annual earnings growth (manual)
+        # A — Annual earnings growth
         {
             "Letter": "A",
             "Criterion": "Annual EPS growth — 3-year track record",
-            "Status": "📋 Manual review",
-            "Action": "—",
-            "Value": "—",
+            "Status": a_status,
+            "Action": "Buy" if a_status == "✅" else ("Watch" if a_status == "⚠️" else "Avoid") if a_status != "—" else "—",
+            "Value": a_value,
             "Rule Description": (
-                # TODO: DeepVue screenshot upload
                 "O'Neil: 3-yr avg annual EPS growth ≥ 25%. ROE ≥ 17%. "
-                "Consistent growth, not one-time jumps. "
-                "Upload DeepVue screenshot to auto-fill."
+                "Consistent compounding — avoid one-time jumps. "
+                # TODO: DeepVue screenshot upload — to override with audited data
             ),
         },
         # N — New product / service / management / industry conditions
@@ -253,11 +292,11 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
             "Criterion": "New product, service, management, or industry shift",
             "Status": "📋 Manual review",
             "Action": "—",
-            "Value": (peak["value"] if peak else "—"),
+            "Value": news_items[0]["title"][:80] if news_items else "No recent news via FMP",
             "Rule Description": (
-                "O'Neil: stocks that make the biggest moves have something NEW driving them — "
-                "a breakthrough product, new CEO, disruptive technology, or fundamental industry change. "
-                + (f"\nRecent news: {news_str}" if news_str else "\nNo recent news found via FMP.")
+                "O'Neil: the biggest stock moves are driven by something NEW — "
+                "a breakthrough product, new CEO, disruptive technology, or a major industry change. "
+                "Latest headlines: " + (news_str if news_str else "none found.")
             ),
         },
         # S — Supply and demand (volume)
@@ -369,6 +408,7 @@ def _rule_table(results: list, rules_lookup: dict):
 # ---------------------------------------------------------------------------
 
 def _render_detail(holding: dict, rules_lookup: dict):
+    st.markdown(_WRAP_CSS, unsafe_allow_html=True)
     vtype, reason = _verdict(holding, rules_lookup)
     label, _      = _VERDICT_META[vtype]
     price_str     = _fmt_price(holding["current_price"])
@@ -417,12 +457,26 @@ def _render_detail(holding: dict, rules_lookup: dict):
 # Main decision view
 # ---------------------------------------------------------------------------
 
+_WRAP_CSS = """
+<style>
+/* Force text wrap in all Streamlit dataframe cells */
+.stDataFrame td, .stDataFrame th {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 600px;
+}
+</style>
+"""
+
+
 def render_decision_view(holdings: list, rules: list, show_account: bool = True, key: str = "decision"):
     """Single table (all stocks) + click-to-expand detail section below."""
     if not holdings:
         st.info("No holdings found.")
         return
 
+    st.markdown(_WRAP_CSS, unsafe_allow_html=True)
     rules_lookup = {r["rule_id"]: r for r in rules}
 
     # Data source links
