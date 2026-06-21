@@ -44,10 +44,14 @@ def fetch_technicals(symbols: list, spy_data: pd.DataFrame = None) -> dict:
                 results[sym] = {"error": "insufficient data"}
                 continue
 
-            close  = raw["Close"].squeeze()
-            high   = raw["High"].squeeze()
-            low    = raw["Low"].squeeze()
-            volume = raw["Volume"].squeeze()
+            close  = raw["Close"].squeeze().dropna()
+            high   = raw["High"].squeeze().dropna()
+            low    = raw["Low"].squeeze().dropna()
+            volume = raw["Volume"].squeeze().dropna()
+
+            if close.empty:
+                results[sym] = {"error": "all NaN prices"}
+                continue
 
             price      = float(close.iloc[-1])
             sma50      = float(close.tail(50).mean())  if len(close) >= 50  else None
