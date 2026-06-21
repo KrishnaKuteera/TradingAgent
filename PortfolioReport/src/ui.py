@@ -354,20 +354,14 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
         },
     ]
 
-    df = pd.DataFrame(rows)
-    st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Letter":          st.column_config.TextColumn("",               width="small"),
-            "Criterion":       st.column_config.TextColumn("Criterion",      width="medium"),
-            "Status":          st.column_config.TextColumn("Status",         width="small"),
-            "Action":          st.column_config.TextColumn("Action",         width="small"),
-            "Value":           st.column_config.TextColumn("Value",          width="medium"),
-            "Rule Description": st.column_config.TextColumn("Rule Description", width="large"),
-        },
-    )
+    _html_table(rows, [
+        ("Letter",           "",                 "small"),
+        ("Criterion",        "Criterion",        ""),
+        ("Status",           "Status",           "small"),
+        ("Action",           "Action",           "small"),
+        ("Value",            "Value",            ""),
+        ("Rule Description", "Rule Description", "desc"),
+    ])
 
 
 # ---------------------------------------------------------------------------
@@ -388,19 +382,13 @@ def _rule_table(results: list, rules_lookup: dict):
             "Value":            r.get("value", "—"),
             "Rule Description": r.get("detail", "") or desc,
         })
-    df = pd.DataFrame(rows)
-    st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Rule":             st.column_config.TextColumn("Rule",             width="medium"),
-            "Status":           st.column_config.TextColumn("Status",           width="small"),
-            "Action":           st.column_config.TextColumn("Action",           width="small"),
-            "Value":            st.column_config.TextColumn("Value",            width="medium"),
-            "Rule Description": st.column_config.TextColumn("Rule Description", width="large"),
-        },
-    )
+    _html_table(rows, [
+        ("Rule",             "Rule",             ""),
+        ("Status",           "Status",           "small"),
+        ("Action",           "Action",           "small"),
+        ("Value",            "Value",            ""),
+        ("Rule Description", "Rule Description", "desc"),
+    ])
 
 
 # ---------------------------------------------------------------------------
@@ -408,7 +396,6 @@ def _rule_table(results: list, rules_lookup: dict):
 # ---------------------------------------------------------------------------
 
 def _render_detail(holding: dict, rules_lookup: dict):
-    st.markdown(_WRAP_CSS, unsafe_allow_html=True)
     vtype, reason = _verdict(holding, rules_lookup)
     label, _      = _VERDICT_META[vtype]
     price_str     = _fmt_price(holding["current_price"])
@@ -457,17 +444,57 @@ def _render_detail(holding: dict, rules_lookup: dict):
 # Main decision view
 # ---------------------------------------------------------------------------
 
-_WRAP_CSS = """
+_TABLE_CSS = """
 <style>
-/* Force text wrap in all Streamlit dataframe cells */
-.stDataFrame td, .stDataFrame th {
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
-    overflow-wrap: break-word !important;
-    max-width: 600px;
+.wt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-family: sans-serif;
+    margin-bottom: 1rem;
 }
+.wt-table th {
+    background: #f0f2f6;
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 2px solid #d0d3da;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.wt-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #e8eaf0;
+    vertical-align: top;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.45;
+}
+.wt-table tr:hover td { background: #f7f8fc; }
+.wt-table td.num { text-align: right; }
+.wt-table td.small { white-space: nowrap; width: 1%; }
+.wt-table td.desc { min-width: 260px; }
 </style>
 """
+
+
+def _html_table(rows: list, col_specs: list):
+    """Render a list of dicts as a wrapping HTML table.
+
+    col_specs: list of (key, header, css_class)
+    """
+    import html
+    headers = "".join(f"<th>{h}</th>" for _, h, _ in col_specs)
+    body = ""
+    for row in rows:
+        cells = ""
+        for key, _, cls in col_specs:
+            val = str(row.get(key, "") or "")
+            cells += f'<td class="{cls}">{html.escape(val)}</td>'
+        body += f"<tr>{cells}</tr>"
+    st.markdown(
+        f'{_TABLE_CSS}<table class="wt-table"><thead><tr>{headers}</tr></thead><tbody>{body}</tbody></table>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_decision_view(holdings: list, rules: list, show_account: bool = True, key: str = "decision"):
@@ -476,7 +503,6 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
         st.info("No holdings found.")
         return
 
-    st.markdown(_WRAP_CSS, unsafe_allow_html=True)
     rules_lookup = {r["rule_id"]: r for r in rules}
 
     # Data source links
