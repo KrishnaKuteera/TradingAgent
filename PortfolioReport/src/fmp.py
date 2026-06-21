@@ -52,25 +52,38 @@ def _fmp_symbol(sym: str) -> str:
     return _FMP_TICKER_MAP.get(sym, sym)
 
 
-def fetch_spy_quote() -> dict:
-    """Fetch SPY quote from FMP (free tier). Returns dict with price, priceAvg50, priceAvg200."""
+def fetch_market_quotes(symbols: list = None) -> dict:
+    """Fetch SPY and QQQ quotes from FMP (free tier).
+
+    Returns {symbol: {price, priceAvg50, priceAvg200, changePercentage, yearHigh, yearLow}}.
+    """
+    if symbols is None:
+        symbols = ["SPY", "QQQ"]
     key = _api_key()
     if not key:
         return {}
-    try:
-        resp = requests.get(
-            f"{_BASE}/quote",
-            params={"symbol": "SPY", "apikey": key},
-            timeout=15,
-        )
-        if resp.status_code != 200:
-            return {}
-        data = resp.json()
-        if isinstance(data, list) and data:
-            return data[0]
-    except Exception:
-        pass
-    return {}
+    result = {}
+    for sym in symbols:
+        try:
+            resp = requests.get(
+                f"{_BASE}/quote",
+                params={"symbol": sym, "apikey": key},
+                timeout=15,
+            )
+            if resp.status_code != 200:
+                continue
+            data = resp.json()
+            if isinstance(data, list) and data:
+                result[sym] = data[0]
+        except Exception:
+            continue
+    return result
+
+
+def fetch_spy_quote() -> dict:
+    """Backwards-compat alias — returns SPY quote dict."""
+    quotes = fetch_market_quotes(["SPY"])
+    return quotes.get("SPY", {})
 
 
 def fetch_profiles(symbols: list) -> dict:

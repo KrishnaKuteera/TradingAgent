@@ -1002,20 +1002,74 @@ function switchView(view) {
 
 
 # ---------------------------------------------------------------------------
+# Market conditions banner
+# ---------------------------------------------------------------------------
+
+def market_conditions_banner(market_quotes: dict) -> str:
+    """Render SPY + QQQ status strip for the HTML report header."""
+    if not market_quotes:
+        return ""
+
+    def _status(q):
+        price  = q.get("price", 0)
+        sma50  = q.get("priceAvg50", 0)
+        sma200 = q.get("priceAvg200", 0)
+        chg    = q.get("changePercentage", 0)
+        chg_str = f"{'+' if chg >= 0 else ''}{chg:.2f}%"
+        if price > sma50 > sma200:
+            label, color = "Stage 2 Uptrend", "#2e7d32"
+        elif price < sma200:
+            label, color = "Bear Market", "#c62828"
+        elif sma50 < sma200:
+            label, color = "Death Cross", "#e65100"
+        else:
+            label, color = "Mixed", "#f57f17"
+        return label, color, chg_str, price, sma50, sma200
+
+    items = []
+    for sym in ["SPY", "QQQ"]:
+        q = market_quotes.get(sym)
+        if not q:
+            continue
+        label, color, chg_str, price, sma50, sma200 = _status(q)
+        items.append(
+            f'<div style="display:inline-flex;align-items:center;gap:8px;margin-right:24px;">'
+            f'<span style="font-weight:700;font-size:13px;">{sym}</span>'
+            f'<span style="color:{color};font-weight:600;font-size:13px;">{label}</span>'
+            f'<span style="font-size:12px;color:#666;">${price:.2f} &nbsp;'
+            f'50-SMA ${sma50:.0f} &nbsp; 200-SMA ${sma200:.0f} &nbsp; {chg_str}</span>'
+            f'</div>'
+        )
+
+    if not items:
+        return ""
+
+    return (
+        '<div style="background:#f5f5f5;border-bottom:1px solid #ddd;'
+        'padding:8px 20px;font-family:sans-serif;">'
+        '<span style="font-size:11px;color:#888;margin-right:16px;">MARKET</span>'
+        + "".join(items) +
+        '</div>'
+    )
+
+
+# ---------------------------------------------------------------------------
 # HTML assembler
 # ---------------------------------------------------------------------------
 
 def build_html(chandu_data: dict, nandu_data: dict, report_date: str, fx: float,
                sector_data: dict, subsector_data: dict,
-               currency_overrides: dict = None, errors: list = None) -> str:
+               currency_overrides: dict = None, errors: list = None,
+               market_quotes: dict = None) -> str:
     if currency_overrides is None:
         currency_overrides = {}
     if errors is None:
         errors = []
     ch_tabs, ch_totals = person_tabs("Chandu", chandu_data, "ch", sector_data, subsector_data, currency_overrides)
     nd_tabs, nd_totals = person_tabs("Nandu",  nandu_data,  "nd", sector_data, subsector_data, currency_overrides)
-    hh     = household_tab(chandu_data, nandu_data, ch_totals, nd_totals, sector_data, subsector_data, currency_overrides)
-    banner = error_banner(errors)
+    hh          = household_tab(chandu_data, nandu_data, ch_totals, nd_totals, sector_data, subsector_data, currency_overrides)
+    banner      = error_banner(errors)
+    mkt_banner  = market_conditions_banner(market_quotes or {})
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1026,6 +1080,7 @@ def build_html(chandu_data: dict, nandu_data: dict, report_date: str, fx: float,
   <style>{CSS}</style>
 </head>
 <body>
+{mkt_banner}
 <header>
   <div>
     <h1>Portfolio Report</h1>

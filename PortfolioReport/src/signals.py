@@ -495,25 +495,52 @@ def _eval_canslim_s(rule, tech):
                    detail=f"Near 52W high on weak volume ({vol_r:.1f}x). Breakout not confirmed — needs {vol_thresh}x+ to be valid.")
 
 
-def _eval_canslim_m(rule, spy_tech: dict):
-    """M: Market Direction — SPY must be in confirmed uptrend."""
-    sma50  = spy_tech.get("priceAvg50") or spy_tech.get("sma50")
-    sma200 = spy_tech.get("priceAvg200") or spy_tech.get("sma200")
-    price  = spy_tech.get("price")
-    if not sma50 or not sma200 or not price:
-        return _result(rule, NA, "No SPY data")
-    if price > sma50 > sma200:
-        return _result(rule, PASS, f"SPY Stage 2 uptrend (${price:.0f} > 50-SMA ${sma50:.0f} > 200-SMA ${sma200:.0f})")
-    if price < sma200:
-        return _result(rule, FAIL, f"SPY bear market — below 200-SMA (${price:.0f} < ${sma200:.0f})",
-                       action="REDUCE RISK", urgency="IMMEDIATE",
-                       detail="Market in Stage 4 decline. O'Neil rule: no new buys, reduce exposure.")
-    if sma50 < sma200:
-        return _result(rule, WARN, f"SPY death cross — 50-SMA ${sma50:.0f} < 200-SMA ${sma200:.0f}",
-                       action="Caution", urgency="THIS WEEK",
-                       detail="Market in downtrend. Be defensive — tighten stops, avoid new buys.")
-    return _result(rule, WARN, f"SPY mixed — above 200-SMA but below 50-SMA",
-                   action="Caution", urgency="MONITOR")
+def _eval_canslim_m(rule, market_quotes: dict):
+    """M: Market Direction — SPY and QQQ must both be in confirmed uptrend."""
+    def _trend(sym, q):
+        price  = q.get("price", 0)
+        sma50  = q.get("priceAvg50", 0)
+        sma200 = q.get("priceAvg200", 0)
+        if not price or not sma50 or not sma200:
+            return None, None, None, None
+        if price > sma50 > sma200:
+            return "Stage 2 Uptrend", "PASS", sma50, sma200
+        if price < sma200:
+            return "Bear Market", "FAIL", sma50, sma200
+        if sma50 < sma200:
+            return "Death Cross", "WARN", sma50, sma200
+        return "Mixed", "WARN", sma50, sma200
+
+    spy = market_quotes.get("SPY", {})
+    qqq = market_quotes.get("QQQ", {})
+
+    spy_trend, spy_st, spy_50, spy_200 = _trend("SPY", spy)
+    qqq_trend, qqq_st, qqq_50, qqq_200 = _trend("QQQ", qqq)
+
+    if spy_trend is None and qqq_trend is None:
+        return _result(rule, NA, "No market data")
+
+    parts = []
+    if spy_trend:
+        parts.append(f"SPY: {spy_trend} (50-SMA ${spy_50:.0f} / 200-SMA ${spy_200:.0f})")
+    if qqq_trend:
+        parts.append(f"QQQ: {qqq_trend} (50-SMA ${qqq_50:.0f} / 200-SMA ${qqq_200:.0f})")
+    value = " | ".join(parts)
+
+    worst = max([spy_st, qqq_st], key=lambda s: {"FAIL": 0, "WARN": 1, "PASS": 2, None: 3}.get(s, 3)
+                if s else 3, default=None)
+    # Lower is worse
+    rank = {"FAIL": 0, "WARN": 1, "PASS": 2}
+    statuses = [s for s in [spy_st, qqq_st] if s]
+    worst = min(statuses, key=lambda s: rank.get(s, 2)) if statuses else None
+
+    if worst == "FAIL":
+        return _result(rule, FAIL, value, action="REDUCE RISK", urgency="IMMEDIATE",
+                       detail="Market in bear territory. O'Neil rule: no new buys, raise cash, tighten stops.")
+    if worst == "WARN":
+        return _result(rule, WARN, value, action="Caution", urgency="THIS WEEK",
+                       detail="Market in downtrend or mixed. Be defensive — avoid new buys, tighten stops.")
+    return _result(rule, PASS, value)
 
 
 # Map rule_id → evaluator
@@ -536,7 +563,7 @@ _EVALUATORS = {
     "sell_failed_breakout":  lambda rule, pos, tech, bal: _eval_failed_breakout(rule, pos, tech),
     "canslim_l":             lambda rule, pos, tech, bal: _eval_canslim_l(rule, tech),
     "canslim_s":             lambda rule, pos, tech, bal: _eval_canslim_s(rule, tech),
-    "canslim_m":             lambda rule, pos, tech, bal: _eval_canslim_m(rule, tech.get("__spy__", {})),
+    "canslim_m":             lambda rule, pos, tech, bal: _eval_canslim_m(rule, tech.get("__market__", {})),
     "market_golden_cross":   lambda rule, pos, tech, bal: _eval_golden_cross(rule, tech),
     "market_death_cross":    lambda rule, pos, tech, bal: _eval_death_cross(rule, tech),
     "market_distribution_day": lambda rule, pos, tech, bal: _eval_distribution_volume(rule, tech),
@@ -708,14 +735,14 @@ def run_signals(chandu_data: dict, nandu_data: dict, rules: list) -> dict:
 
     technicals = fetch_technicals(sorted(symbols))
 
-    # Inject SPY market data (from FMP free tier) into every position's tech dict
-    # so canslim_m evaluator can access it via tech["__spy__"]
+    # Inject SPY + QQQ market data into every position's tech dict
+    # so canslim_m evaluator can access both via tech["__market__"]
     try:
-        from .fmp import fetch_spy_quote
-        spy_quote = fetch_spy_quote()
-        if spy_quote:
+        from .fmp import fetch_market_quotes
+        market_quotes = fetch_market_quotes(["SPY", "QQQ"])
+        if market_quotes:
             for tech in technicals.values():
-                tech["__spy__"] = spy_quote
+                tech["__market__"] = market_quotes
     except Exception:
         pass
 

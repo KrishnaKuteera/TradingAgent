@@ -80,8 +80,12 @@ with st.spinner("Fetching live data from Questrade..."):
         currency_overrides = load_currency_overrides()
         report_date        = datetime.today().strftime("%d %b %Y")
 
+        from src.fmp import fetch_market_quotes
+        market_quotes = fetch_market_quotes(["SPY", "QQQ"])
+
         html = build_html(chandu_data, nandu_data, report_date, fx,
-                          sector_data, subsector_data, currency_overrides, errors)
+                          sector_data, subsector_data, currency_overrides, errors,
+                          market_quotes=market_quotes)
         st.components.v1.html(html, height=900, scrolling=True)
 
     except Exception as e:
