@@ -118,7 +118,7 @@ def fetch_earnings_growth(symbol: str) -> dict:
     result = {
         "c_eps_growth": None, "c_rev_growth": None,
         "c_eps_current": None, "c_eps_prior": None, "c_quarter": None,
-        "c_qtr_growths": [], "c_qtr_labels": [],
+        "c_qtr_growths": [], "c_qtr_labels": [], "c_qtr_eps": [],
         "c_accelerating": False, "c_accel_full": False,
         "a_eps_growth_3yr": None, "a_roe": None, "a_eps_years": [],
     }
@@ -153,6 +153,7 @@ def fetch_earnings_growth(symbol: str) -> dict:
                     # data[0] vs data[4] = Q0, data[1] vs data[5] = Q-1, etc.
                     qtr_growths = []
                     qtr_labels  = []
+                    qtr_eps     = []   # actual EPS value for each quarter
                     for i in range(4):
                         if len(data) > i + 4:
                             e_cur  = data[i].get("eps", 0) or 0
@@ -161,8 +162,10 @@ def fetch_earnings_growth(symbol: str) -> dict:
                                 g = (e_cur - e_prev) / abs(e_prev) * 100
                                 qtr_growths.append(round(g, 1))
                                 qtr_labels.append(data[i].get("date", "")[:7])
+                                qtr_eps.append(round(e_cur, 2))
                     result["c_qtr_growths"] = qtr_growths   # [current, Q-1, Q-2, Q-3]
                     result["c_qtr_labels"]  = qtr_labels
+                    result["c_qtr_eps"]     = qtr_eps
                     if len(qtr_growths) >= 2:
                         result["c_accelerating"] = qtr_growths[0] > qtr_growths[1]
                     if len(qtr_growths) >= 4:

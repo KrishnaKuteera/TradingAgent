@@ -232,7 +232,8 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
     c_qtr        = eg.get("c_quarter", "")
     c_eps_v      = eg.get("c_eps_current")
     c_prior      = eg.get("c_eps_prior")
-    c_growths    = eg.get("c_qtr_growths", [])   # [current, prior, 2-ago]
+    c_growths    = eg.get("c_qtr_growths", [])   # [current, Q-1, Q-2, Q-3]
+    c_qtr_eps    = eg.get("c_qtr_eps", [])
     c_accel      = eg.get("c_accelerating", False)
     c_accel_full = eg.get("c_accel_full", False)
 
@@ -248,7 +249,15 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
             c_value += f"  |  Rev {_pct_str(c_rev_g)} vs year-ago Q"
         # Acceleration trend across last 4 quarters (oldest → newest)
         if len(c_growths) >= 2:
-            trend = " → ".join(f"{g:+.1f}%" for g in reversed(c_growths))
+            # Pair EPS value with growth rate: $1.23(+54%) per quarter
+            parts = []
+            for i, g in enumerate(reversed(c_growths)):
+                eps_i = len(c_growths) - 1 - i   # index in c_qtr_eps (reversed)
+                if eps_i < len(c_qtr_eps):
+                    parts.append(f"${c_qtr_eps[eps_i]}({g:+.1f}%)")
+                else:
+                    parts.append(f"{g:+.1f}%")
+            trend = " → ".join(parts)
             accel_icon = "✅ Accelerating" if c_accel_full else ("↗ Improving" if c_accel else "⚠️ Decelerating")
             c_value += f"\n4Q trend: {trend}  {accel_icon}"
 
