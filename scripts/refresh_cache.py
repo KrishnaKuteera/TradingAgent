@@ -1,7 +1,7 @@
 """Weekly cache refresh script.
 
 Run locally or via GitHub Actions (see .github/workflows/refresh_earnings.yml).
-Fetches earnings + news for all tickers in scripts/tickers.json.
+Tickers come from Google Sheets "Tickers" tab (primary) + scripts/tickers.json (fallback).
 Uses Claude to summarize the N (new catalyst) criterion from recent headlines.
 Writes results to PortfolioReport/earnings_cache.json (committed to git).
 
@@ -11,6 +11,8 @@ Usage:
 
 Requires:
     ANTHROPIC_API_KEY env var (optional — skips Claude news analysis if missing)
+    GCP_SERVICE_ACCOUNT_JSON env var — full service account JSON string (for Google Sheets)
+      OR tradeportfolioagent-8348ccf38790.json file present locally
 """
 
 import argparse
@@ -175,16 +177,67 @@ def refresh_ticker(symbol: str) -> dict:
     return entry
 
 
+def _fetch_tickers_from_sheets() -> list:
+    """Read tickers from Google Sheets 'Tickers' tab.
+
+    Credentials priority:
+      1. GCP_SERVICE_ACCOUNT_JSON env var (GitHub Actions secret — full JSON string)
+      2. Local service account JSON file
+    """
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+
+        SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly",
+                  "https://www.googleapis.com/auth/drive.readonly"]
+
+        sa_json = os.environ.get("GCP_SERVICE_ACCOUNT_JSON")
+        if sa_json:
+            info = json.loads(sa_json)
+            creds = Credentials.from_service_account_info(info, scopes=SCOPES)
+        else:
+            sa_file = ROOT / "tradeportfolioagent-8348ccf38790.json"
+            if not sa_file.exists():
+                return []
+            creds = Credentials.from_service_account_file(str(sa_file), scopes=SCOPES)
+
+        client = gspread.authorize(creds)
+        ws = client.open("StockTracker").worksheet("Tickers")
+        rows = ws.get_all_values()
+        if not rows:
+            return []
+        headers = [h.lower().strip() for h in rows[0]]
+        ticker_idx = headers.index("ticker") if "ticker" in headers else 0
+        tickers = [
+            row[ticker_idx].strip().upper()
+            for row in rows[1:]
+            if row and len(row) > ticker_idx and row[ticker_idx].strip()
+        ]
+        print(f"  Loaded {len(tickers)} tickers from Google Sheets")
+        return tickers
+    except Exception as e:
+        print(f"  Google Sheets unavailable ({e}) — falling back to tickers.json")
+        return []
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Print output without writing file")
     args = parser.parse_args()
 
-    tickers_config = json.loads(TICKERS_FILE.read_text())
-    tickers = tickers_config.get("watchlist", [])
+    # Primary: Google Sheets. Fallback: tickers.json
+    tickers = _fetch_tickers_from_sheets()
     if not tickers:
-        print("No tickers found in scripts/tickers.json")
+        tickers_config = json.loads(TICKERS_FILE.read_text())
+        tickers = tickers_config.get("watchlist", [])
+
+    if not tickers:
+        print("No tickers found in Google Sheets or scripts/tickers.json")
         sys.exit(1)
+
+    # Deduplicate preserving order
+    seen = set()
+    tickers = [t for t in tickers if not (t in seen or seen.add(t))]
 
     print(f"Refreshing {len(tickers)} tickers...")
     anthropic_available = bool(os.environ.get("ANTHROPIC_API_KEY"))

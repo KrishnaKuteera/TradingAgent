@@ -21,11 +21,12 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install yfinance anthropic
+        run: pip install yfinance anthropic gspread google-auth
 
       - name: Run refresh script
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
         run: python3 scripts/refresh_cache.py
 
       - name: Commit and push cache

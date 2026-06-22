@@ -342,5 +342,6 @@ O'Neil's exact confirmed-uptrend definition:
 ## Next Steps
 
 - [ ] **Tier 2 CAN SLIM** — institutional ownership (I), FTD detection (M), industry group rank (L)
-- [ ] **Token rotation permanent fix** — GCP Secret Manager or Firestore
+- [ ] **Automate generate_report.py weekly via GitHub Actions** — Gist sync already handles token rotation; just needs `GITHUB_GIST_TOKEN` added to GitHub Actions secrets, then add a workflow that runs the report, extracts portfolio tickers into `scripts/portfolio_tickers.json`, and commits
+- [ ] **Token rotation permanent fix** — GCP Secret Manager or Firestore (Gist sync already working; this is a longer-term upgrade)
 - [ ] **Auto-sync** — pre-commit hook or symlink so local edits don't need manual copy to TradeAgent
