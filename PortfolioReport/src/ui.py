@@ -238,7 +238,9 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
 
     c_value = "—"
     if c_eps_g is not None:
-        qtr_label = f"Q {c_qtr}" if c_qtr else "Latest Q"
+        qtr_label = c_qtr or (c_growths and eg.get("c_qtr_labels", [None])[0]) or "Latest Q"
+        if qtr_label and qtr_label != "Latest Q":
+            qtr_label = f"Q {qtr_label}"
         c_value = f"{qtr_label} EPS {_pct_str(c_eps_g)} vs year-ago Q"
         if c_eps_v is not None and c_prior is not None:
             c_value += f"  (${c_eps_v:.2f} vs ${c_prior:.2f})"
@@ -252,8 +254,15 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
 
     c_status = "—"
     if c_eps_g is not None:
-        # Needs both ≥25% growth AND accelerating to be a full PASS
-        c_status = "✅" if (c_eps_g >= 25 and c_accel) else ("⚠️" if c_eps_g >= 25 or c_accel else "❌")
+        has_accel_data = len(c_growths) >= 2
+        if c_eps_g >= 25 and (c_accel or not has_accel_data):
+            c_status = "✅"  # strong growth; acceleration confirmed or data unavailable
+        elif c_eps_g >= 25:
+            c_status = "⚠️"  # growth ≥25% but decelerating — worth watching
+        elif c_eps_g >= 0:
+            c_status = "⚠️"  # positive but below threshold
+        else:
+            c_status = "❌"  # negative EPS growth
 
     # Format A values
     a_g3   = eg.get("a_eps_growth_3yr")
