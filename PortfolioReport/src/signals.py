@@ -550,6 +550,105 @@ def _eval_canslim_m(rule, market_quotes: dict):
     return _result(rule, PASS, value)
 
 
+def _eval_canslim_c(rule, tech: dict):
+    """C: Current quarterly EPS & revenue growth ≥ 25% vs year-ago quarter."""
+    p = rule.get("params", {})
+    threshold = p.get("min_eps_growth_pct", 25)
+
+    eg = tech.get("__earnings__", {})
+    c_eps_g = eg.get("c_eps_growth")
+    c_rev_g = eg.get("c_rev_growth")
+    c_accel = eg.get("c_accelerating", False)
+    c_growths = eg.get("c_qtr_growths", [])
+    c_cur = eg.get("c_eps_current")
+    c_pri = eg.get("c_eps_prior")
+    c_qtr = eg.get("c_quarter", "")
+
+    if c_eps_g is None:
+        return _result(rule, NA, "No earnings data available")
+
+    eps_str = f"Q {c_qtr} EPS {c_eps_g:+.1f}% vs year-ago Q"
+    if c_cur is not None and c_pri is not None:
+        eps_str += f" (${c_cur} vs ${c_pri})"
+    if c_rev_g is not None:
+        eps_str += f" | Rev {c_rev_g:+.1f}%"
+
+    has_accel = len(c_growths) >= 2
+    if c_eps_g >= threshold and (c_accel or not has_accel):
+        return _result(rule, PASS, eps_str,
+                       detail=f"EPS {c_eps_g:+.1f}% ≥ {threshold}% threshold. {'Accelerating.' if c_accel else 'Insufficient data for acceleration check.'}")
+    if c_eps_g >= threshold:
+        return _result(rule, WARN, eps_str, action="Watch",
+                       detail=f"EPS {c_eps_g:+.1f}% ≥ {threshold}% but decelerating quarter-over-quarter.")
+    if c_eps_g >= 0:
+        return _result(rule, WARN, eps_str, action="Watch",
+                       detail=f"EPS growth {c_eps_g:+.1f}% — below {threshold}% threshold.")
+    return _result(rule, FAIL, eps_str, action="Avoid",
+                   detail=f"EPS growth negative ({c_eps_g:+.1f}%).")
+
+
+def _eval_canslim_a(rule, tech: dict):
+    """A: Annual EPS growth — 3-year average ≥ 25%, ROE ≥ 17%."""
+    p = rule.get("params", {})
+    threshold = p.get("min_annual_growth_pct", 25)
+    min_roe   = p.get("min_roe_pct", 17)
+
+    eg = tech.get("__earnings__", {})
+    a_g3  = eg.get("a_eps_growth_3yr")
+    a_roe = eg.get("a_roe")
+    years = eg.get("a_eps_years", [])
+
+    if a_g3 is None:
+        return _result(rule, NA, "No annual earnings data available")
+
+    yrs_str = " → ".join(f"{y['year']}: ${y['eps']}" for y in years[:4]) if years else ""
+    roe_str = f" | ROE {a_roe*100:.1f}%" if a_roe else ""
+    value = f"3-yr avg EPS growth: {a_g3:+.1f}%{roe_str}" + (f"  |  {yrs_str}" if yrs_str else "")
+
+    roe_ok = (a_roe is None) or (a_roe * 100 >= min_roe)
+    if a_g3 >= threshold and roe_ok:
+        return _result(rule, PASS, value,
+                       detail=f"3-yr avg EPS growth {a_g3:+.1f}% ≥ {threshold}% threshold.")
+    if a_g3 >= threshold:
+        return _result(rule, WARN, value, action="Watch",
+                       detail=f"EPS growth strong but ROE below {min_roe}% threshold.")
+    if a_g3 >= 15:
+        return _result(rule, WARN, value, action="Watch",
+                       detail=f"3-yr avg EPS growth {a_g3:+.1f}% — below {threshold}% threshold.")
+    return _result(rule, FAIL, value, action="Avoid",
+                   detail=f"3-yr avg EPS growth {a_g3:+.1f}% — well below {threshold}% threshold.")
+
+
+def _eval_canslim_n(rule, tech: dict):
+    """N: New product, service, management, or industry shift."""
+    eg = tech.get("__earnings__", {})
+    n_catalyst = eg.get("n_catalyst")
+
+    if not n_catalyst:
+        return _result(rule, NA, "No news data — manual review required")
+
+    score = n_catalyst.get("score", "none")
+    summary = n_catalyst.get("summary", "")
+    ctype = n_catalyst.get("catalyst_type", "none")
+
+    if score == "strong":
+        return _result(rule, PASS, f"{ctype}: {summary[:80]}",
+                       detail=f"Strong new catalyst identified: {summary}")
+    if score == "moderate":
+        return _result(rule, WARN, f"{ctype}: {summary[:80]}", action="Review",
+                       detail=f"Moderate catalyst — confirm it's driving earnings growth.")
+    # weak or none
+    return _result(rule, NA, summary[:80] if summary else "No clear new catalyst",
+                   detail="N requires manual review — verify new product/service/management on IBD or company filings.")
+
+
+def _eval_canslim_i(rule, tech: dict):
+    """I: Institutional sponsorship — rising owner count QoQ."""
+    # No automated data source yet — always N/A for manual review
+    return _result(rule, NA, "Manual review — upload DeepVue screenshot for institutional data",
+                   detail="O'Neil: rising institutional owner count QoQ = fund accumulation signal.")
+
+
 # Map rule_id → evaluator
 _EVALUATORS = {
     "position_limit":        lambda rule, pos, tech, bal: _eval_position_limit(rule, pos, bal),
@@ -568,6 +667,10 @@ _EVALUATORS = {
     "sell_new_high_low_vol": lambda rule, pos, tech, bal: _eval_new_high_low_vol(rule, tech),
     "sell_distribution_volume": lambda rule, pos, tech, bal: _eval_distribution_volume(rule, tech),
     "sell_failed_breakout":  lambda rule, pos, tech, bal: _eval_failed_breakout(rule, pos, tech),
+    "canslim_c":             lambda rule, pos, tech, bal: _eval_canslim_c(rule, tech),
+    "canslim_a":             lambda rule, pos, tech, bal: _eval_canslim_a(rule, tech),
+    "canslim_n":             lambda rule, pos, tech, bal: _eval_canslim_n(rule, tech),
+    "canslim_i":             lambda rule, pos, tech, bal: _eval_canslim_i(rule, tech),
     "canslim_l":             lambda rule, pos, tech, bal: _eval_canslim_l(rule, tech),
     "canslim_s":             lambda rule, pos, tech, bal: _eval_canslim_s(rule, tech),
     "canslim_m":             lambda rule, pos, tech, bal: _eval_canslim_m(rule, tech.get("__market__", {})),
@@ -747,6 +850,18 @@ def run_signals_watchlist(tickers: list, rules: list) -> dict:
     except Exception:
         pass
 
+    # Inject earnings cache data (C/A/N) into each ticker's tech dict
+    try:
+        from .fmp import fetch_earnings_growth
+        for sym in tickers:
+            eg = fetch_earnings_growth(sym)
+            if sym in technicals:
+                technicals[sym]["__earnings__"] = eg
+            else:
+                technicals[sym] = {"__earnings__": eg}
+    except Exception:
+        pass
+
     # Build synthetic position rows — one per ticker
     # Cost/quantity/account are zero/None so cost-based rules return N/A
     empty_balances = pd.DataFrame()
@@ -824,6 +939,18 @@ def run_signals(chandu_data: dict, nandu_data: dict, rules: list) -> dict:
         if market_quotes:
             for tech in technicals.values():
                 tech["__market__"] = market_quotes
+    except Exception:
+        pass
+
+    # Inject earnings cache data (C/A/N) into each symbol's tech dict
+    try:
+        from .fmp import fetch_earnings_growth
+        for sym in sorted(symbols):
+            eg = fetch_earnings_growth(sym)
+            if sym in technicals:
+                technicals[sym]["__earnings__"] = eg
+            else:
+                technicals[sym] = {"__earnings__": eg}
     except Exception:
         pass
 
