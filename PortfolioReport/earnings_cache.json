@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-22T02:47:33.754537+00:00",
+  "updated": "2026-06-22T02:50:57.742321+00:00",
   "data": {
     "COHU": {
       "c_eps_growth": 60.6,
@@ -48,10 +48,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:34.566972+00:00"
+      "fetched_at": "2026-06-22T02:50:59.227335+00:00"
     },
     "ONTO": {
       "c_eps_growth": -47.7,
@@ -100,10 +100,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:35.143081+00:00"
+      "fetched_at": "2026-06-22T02:50:59.859623+00:00"
     },
     "AMAT": {
       "c_eps_growth": 33.7,
@@ -152,10 +152,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:35.674423+00:00"
+      "fetched_at": "2026-06-22T02:51:00.403755+00:00"
     },
     "ICHR": {
       "c_eps_growth": 46.2,
@@ -204,10 +204,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:36.225092+00:00"
+      "fetched_at": "2026-06-22T02:51:01.035622+00:00"
     },
     "FORM": {
       "c_eps_growth": 225.0,
@@ -256,10 +256,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:36.788015+00:00"
+      "fetched_at": "2026-06-22T02:51:01.655003+00:00"
     },
     "MPWR": {
       "c_eps_growth": 40.7,
@@ -308,10 +308,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:37.325158+00:00"
+      "fetched_at": "2026-06-22T02:51:02.305495+00:00"
     },
     "FCFS": {
       "c_eps_growth": 30.4,
@@ -360,10 +360,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:37.860517+00:00"
+      "fetched_at": "2026-06-22T02:51:02.896094+00:00"
     },
     "AEIS": {
       "c_eps_growth": 168.2,
@@ -412,10 +412,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:38.422804+00:00"
+      "fetched_at": "2026-06-22T02:51:03.480726+00:00"
     },
     "BE": {
       "c_eps_growth": 350.0,
@@ -464,10 +464,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:39.024241+00:00"
+      "fetched_at": "2026-06-22T02:51:04.167739+00:00"
     },
     "DOCN": {
       "c_eps_growth": -59.5,
@@ -516,10 +516,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:40.317370+00:00"
+      "fetched_at": "2026-06-22T02:51:04.893158+00:00"
     },
     "FN": {
       "c_eps_growth": 54.4,
@@ -568,10 +568,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:40.876077+00:00"
+      "fetched_at": "2026-06-22T02:51:05.446998+00:00"
     },
     "TTMI": {
       "c_eps_growth": 50.0,
@@ -620,10 +620,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:41.497353+00:00"
+      "fetched_at": "2026-06-22T02:51:06.080637+00:00"
     },
     "BW": {
       "c_eps_growth": -130.8,
@@ -672,10 +672,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:42.075555+00:00"
+      "fetched_at": "2026-06-22T02:51:06.756299+00:00"
     },
     "AXTI": {
       "c_eps_growth": 85.0,
@@ -724,10 +724,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:42.907148+00:00"
+      "fetched_at": "2026-06-22T02:51:07.311862+00:00"
     },
     "TER": {
       "c_eps_growth": 318.0,
@@ -776,10 +776,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:43.506994+00:00"
+      "fetched_at": "2026-06-22T02:51:07.910314+00:00"
     },
     "AAOI": {
       "c_eps_growth": -5.6,
@@ -828,10 +828,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:44.161154+00:00"
+      "fetched_at": "2026-06-22T02:51:08.522836+00:00"
     },
     "GLW": {
       "c_eps_growth": 138.9,
@@ -880,10 +880,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:44.730872+00:00"
+      "fetched_at": "2026-06-22T02:51:09.129832+00:00"
     },
     "NXT": {
       "c_eps_growth": -6.5,
@@ -932,10 +932,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:45.327344+00:00"
+      "fetched_at": "2026-06-22T02:51:09.694491+00:00"
     },
     "AXIA": {
       "c_eps_growth": null,
@@ -978,10 +978,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:45.925281+00:00"
+      "fetched_at": "2026-06-22T02:51:10.319473+00:00"
     },
     "LPTH": {
       "c_eps_growth": 22.2,
@@ -1030,10 +1030,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:46.506738+00:00"
+      "fetched_at": "2026-06-22T02:51:10.952672+00:00"
     },
     "MOD": {
       "c_eps_growth": 50.9,
@@ -1082,10 +1082,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:47.134944+00:00"
+      "fetched_at": "2026-06-22T02:51:11.531481+00:00"
     },
     "LXU": {
       "c_eps_growth": 1450.0,
@@ -1134,10 +1134,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:47.740781+00:00"
+      "fetched_at": "2026-06-22T02:51:12.118000+00:00"
     },
     "AIP": {
       "c_eps_growth": 15.0,
@@ -1186,10 +1186,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:48.243638+00:00"
+      "fetched_at": "2026-06-22T02:51:12.659845+00:00"
     },
     "RCAT": {
       "c_eps_growth": 18.5,
@@ -1238,10 +1238,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:48.795214+00:00"
+      "fetched_at": "2026-06-22T02:51:13.267367+00:00"
     },
     "ASX": {
       "c_eps_growth": 85.1,
@@ -1290,10 +1290,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:49.326317+00:00"
+      "fetched_at": "2026-06-22T02:51:13.892659+00:00"
     },
     "AMPX": {
       "c_eps_growth": 60.0,
@@ -1342,10 +1342,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:49.864897+00:00"
+      "fetched_at": "2026-06-22T02:51:14.705051+00:00"
     },
     "LSCC": {
       "c_eps_growth": 300.0,
@@ -1394,10 +1394,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:50.629025+00:00"
+      "fetched_at": "2026-06-22T02:51:15.302579+00:00"
     },
     "ALM": {
       "c_eps_growth": 33.3,
@@ -1446,10 +1446,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:51.231924+00:00"
+      "fetched_at": "2026-06-22T02:51:15.879754+00:00"
     },
     "TGB": {
       "c_eps_growth": null,
@@ -1492,10 +1492,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:51.816681+00:00"
+      "fetched_at": "2026-06-22T02:51:16.712565+00:00"
     },
     "ENS": {
       "c_eps_growth": -13.9,
@@ -1544,10 +1544,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:52.425176+00:00"
+      "fetched_at": "2026-06-22T02:51:17.363304+00:00"
     },
     "CRDO": {
       "c_eps_growth": 405.9,
@@ -1596,10 +1596,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:53.015206+00:00"
+      "fetched_at": "2026-06-22T02:51:17.924515+00:00"
     },
     "SITM": {
       "c_eps_growth": 80.2,
@@ -1648,10 +1648,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:53.558027+00:00"
+      "fetched_at": "2026-06-22T02:51:18.489644+00:00"
     },
     "GEV": {
       "c_eps_growth": 1818.5,
@@ -1700,10 +1700,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:54.207641+00:00"
+      "fetched_at": "2026-06-22T02:51:19.078914+00:00"
     },
     "SIMO": {
       "c_eps_growth": 191.8,
@@ -1752,10 +1752,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:54.830388+00:00"
+      "fetched_at": "2026-06-22T02:51:19.674788+00:00"
     },
     "QUIK": {
       "c_eps_growth": 7.1,
@@ -1804,10 +1804,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:55.394484+00:00"
+      "fetched_at": "2026-06-22T02:51:20.671250+00:00"
     },
     "ALGM": {
       "c_eps_growth": -12.5,
@@ -1856,10 +1856,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:55.998202+00:00"
+      "fetched_at": "2026-06-22T02:51:21.247214+00:00"
     },
     "DIOD": {
       "c_eps_growth": 430.0,
@@ -1908,10 +1908,10 @@
       ],
       "n_catalyst": {
         "catalyst_type": "none",
-        "summary": "No news available.",
+        "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-06-22T02:47:56.611151+00:00"
+      "fetched_at": "2026-06-22T02:51:21.848447+00:00"
     }
   }
 }
