@@ -227,11 +227,14 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
         sign = "+" if val >= 0 else ""
         return f"{sign}{val:.1f}%{suffix}"
 
-    c_eps_g  = eg.get("c_eps_growth")
-    c_rev_g  = eg.get("c_rev_growth")
-    c_qtr    = eg.get("c_quarter", "")
-    c_eps_v  = eg.get("c_eps_current")
-    c_prior  = eg.get("c_eps_prior")
+    c_eps_g      = eg.get("c_eps_growth")
+    c_rev_g      = eg.get("c_rev_growth")
+    c_qtr        = eg.get("c_quarter", "")
+    c_eps_v      = eg.get("c_eps_current")
+    c_prior      = eg.get("c_eps_prior")
+    c_growths    = eg.get("c_qtr_growths", [])   # [current, prior, 2-ago]
+    c_accel      = eg.get("c_accelerating", False)
+    c_accel_full = eg.get("c_accel_full", False)
 
     c_value = "—"
     if c_eps_g is not None:
@@ -241,10 +244,16 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
             c_value += f"  (${c_eps_v:.2f} vs ${c_prior:.2f})"
         if c_rev_g is not None:
             c_value += f"  |  Rev {_pct_str(c_rev_g)} vs year-ago Q"
+        # Acceleration trend across last 3 quarters
+        if len(c_growths) >= 2:
+            trend = " → ".join(f"{g:+.1f}%" for g in reversed(c_growths))
+            accel_icon = "✅ Accelerating" if c_accel_full else ("↗ Improving" if c_accel else "⚠️ Decelerating")
+            c_value += f"\nQoQ trend: {trend}  {accel_icon}"
 
     c_status = "—"
     if c_eps_g is not None:
-        c_status = "✅" if c_eps_g >= 25 else ("⚠️" if c_eps_g >= 0 else "❌")
+        # Needs both ≥25% growth AND accelerating to be a full PASS
+        c_status = "✅" if (c_eps_g >= 25 and c_accel) else ("⚠️" if c_eps_g >= 25 or c_accel else "❌")
 
     # Format A values
     a_g3   = eg.get("a_eps_growth_3yr")

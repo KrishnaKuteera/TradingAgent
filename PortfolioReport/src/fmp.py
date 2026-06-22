@@ -106,10 +106,11 @@ def fetch_news(symbol: str, limit: int = 3) -> list:
 
 
 def fetch_earnings_growth(symbol: str) -> dict:
-    """Fetch C and A data: quarterly EPS growth and 3-yr annual EPS growth.
+    """Fetch C and A data: quarterly EPS growth, acceleration, and 3-yr annual EPS growth.
 
     Returns dict with keys:
-      c_eps_growth, c_rev_growth, c_eps_current, c_eps_prior, c_quarter,
+      c_eps_growth (% vs year ago), c_rev_growth, c_accelerating (bool),
+      c_eps_current, c_eps_prior, c_quarter,
       a_eps_growth_3yr, a_roe, a_eps_years
     Falls back to yfinance income_stmt if FMP fails.
     """
@@ -117,6 +118,8 @@ def fetch_earnings_growth(symbol: str) -> dict:
     result = {
         "c_eps_growth": None, "c_rev_growth": None,
         "c_eps_current": None, "c_eps_prior": None, "c_quarter": None,
+        "c_qtr_growths": [], "c_qtr_labels": [],
+        "c_accelerating": False, "c_accel_full": False,
         "a_eps_growth_3yr": None, "a_roe": None, "a_eps_years": [],
     }
 
@@ -124,7 +127,7 @@ def fetch_earnings_growth(symbol: str) -> dict:
 
     if key:
         try:
-            # Quarterly income statement
+            # Quarterly income statement (get last 8 quarters)
             r = requests.get(f"{_BASE}/income-statement", params={
                 "symbol": fmp_sym, "period": "quarter", "limit": 8, "apikey": key,
             }, timeout=15)
@@ -137,6 +140,7 @@ def fetch_earnings_growth(symbol: str) -> dict:
                     eps_prior = yago_q.get("eps", 0) or 0
                     rev_cur  = cur_q.get("revenue", 0) or 0
                     rev_prior = yago_q.get("revenue", 0) or 0
+
                     if eps_prior != 0:
                         result["c_eps_growth"] = (eps_cur - eps_prior) / abs(eps_prior) * 100
                     if rev_prior != 0:
@@ -144,6 +148,25 @@ def fetch_earnings_growth(symbol: str) -> dict:
                     result["c_eps_current"] = eps_cur
                     result["c_eps_prior"]   = eps_prior
                     result["c_quarter"]     = cur_q.get("date", "")[:7]
+
+                    # Acceleration: compute YoY growth rate for each of last 3 quarters
+                    # data[0] vs data[4] = Q0 growth, data[1] vs data[5] = Q-1 growth, etc.
+                    qtr_growths = []
+                    qtr_labels  = []
+                    for i in range(3):
+                        if len(data) > i + 4:
+                            e_cur  = data[i].get("eps", 0) or 0
+                            e_prev = data[i + 4].get("eps", 0) or 0
+                            if e_prev != 0:
+                                g = (e_cur - e_prev) / abs(e_prev) * 100
+                                qtr_growths.append(round(g, 1))
+                                qtr_labels.append(data[i].get("date", "")[:7])
+                    result["c_qtr_growths"] = qtr_growths   # [current, prior, 2-ago]
+                    result["c_qtr_labels"]  = qtr_labels
+                    if len(qtr_growths) >= 2:
+                        result["c_accelerating"] = qtr_growths[0] > qtr_growths[1]
+                    if len(qtr_growths) >= 3:
+                        result["c_accel_full"] = qtr_growths[0] > qtr_growths[1] > qtr_growths[2]
             # Annual income statement
             r2 = requests.get(f"{_BASE}/income-statement", params={
                 "symbol": fmp_sym, "period": "annual", "limit": 4, "apikey": key,
@@ -201,9 +224,12 @@ def fetch_spy_quote() -> dict:
 
 
 def fetch_profiles(symbols: list) -> dict:
-    """Fetch company name + sector for a list of symbols in one API call.
+    """Fetch company name + sector + float + avgVolume for a list of symbols.
 
-    Returns {original_symbol: {"name": str, "sector": str, "industry": str}}.
+    Returns {original_symbol: {
+      "name": str, "sector": str, "industry": str,
+      "float": int (shares), "avgVolume": float
+    }}.
     Symbols not found are silently omitted.
     """
     key = _api_key()
@@ -230,11 +256,117 @@ def fetch_profiles(symbols: list) -> dict:
                 continue
             item = data[0]
             result[orig] = {
-                "name":     item.get("companyName") or orig,
-                "sector":   item.get("sector")   or "",
-                "industry": item.get("industry") or "",
+                "name":      item.get("companyName") or orig,
+                "sector":    item.get("sector")   or "",
+                "industry":  item.get("industry") or "",
+                "float":     item.get("sharesFloat") or 0,
+                "avgVolume": item.get("avgVolume") or 0,
             }
         except Exception:
             continue
 
     return result
+
+
+def fetch_earnings_surprise(symbol: str) -> dict:
+    """Fetch earnings beat/miss data (C criterion).
+
+    Returns dict with keys: beat_count, miss_count, avg_surprise_pct, last_surprise.
+    """
+    key = _api_key()
+    result = {"beat_count": 0, "miss_count": 0, "avg_surprise_pct": None, "last_surprise": None}
+
+    if not key:
+        return result
+
+    fmp_sym = _fmp_symbol(symbol)
+    try:
+        resp = requests.get(
+            f"{_BASE}/earnings-surprises",
+            params={"symbol": fmp_sym, "apikey": key},
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            return result
+        data = resp.json()
+        if not isinstance(data, list) or not data:
+            return result
+
+        beats = sum(1 for d in data if (d.get("actualEarningsResult", 0) or 0) > (d.get("estimatedEarnings", 0) or 0))
+        misses = len(data) - beats
+        surprises = [d.get("surprisePercent", 0) or 0 for d in data if d.get("surprisePercent")]
+
+        result["beat_count"] = beats
+        result["miss_count"] = misses
+        if surprises:
+            result["avg_surprise_pct"] = sum(surprises) / len(surprises)
+            result["last_surprise"] = surprises[0]
+    except Exception:
+        pass
+
+    return result
+
+
+def fetch_key_metrics(symbol: str) -> dict:
+    """Fetch key metrics including ROE (A criterion).
+
+    Returns dict with keys: roe, pe_ratio, debt_to_equity.
+    """
+    key = _api_key()
+    result = {"roe": None, "pe_ratio": None, "debt_to_equity": None}
+
+    if not key:
+        return result
+
+    fmp_sym = _fmp_symbol(symbol)
+    try:
+        resp = requests.get(
+            f"{_BASE}/key-metrics",
+            params={"symbol": fmp_sym, "limit": 1, "apikey": key},
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            return result
+        data = resp.json()
+        if not isinstance(data, list) or not data:
+            return result
+
+        item = data[0]
+        result["roe"] = item.get("returnOnEquity")
+        result["pe_ratio"] = item.get("peRatio")
+        result["debt_to_equity"] = item.get("debtToEquity")
+    except Exception:
+        pass
+
+    return result
+
+
+def fetch_earnings_calendar(symbol: str) -> Optional[str]:
+    """Fetch next earnings date (for C/A context).
+
+    Returns date string YYYY-MM-DD or None.
+    """
+    key = _api_key()
+    if not key:
+        return None
+
+    fmp_sym = _fmp_symbol(symbol)
+    try:
+        resp = requests.get(
+            f"{_BASE}/earnings-calendar",
+            params={"symbol": fmp_sym, "apikey": key},
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if not isinstance(data, list) or not data:
+            return None
+
+        # FMP returns upcoming earnings dates; take the first (nearest)
+        next_date = data[0].get("date")
+        return next_date if next_date else None
+    except Exception:
+        pass
+
+    return None
