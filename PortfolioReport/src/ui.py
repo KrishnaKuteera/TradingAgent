@@ -239,27 +239,34 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
 
     c_value = "—"
     if c_eps_g is not None:
-        qtr_label = c_qtr or (c_growths and eg.get("c_qtr_labels", [None])[0]) or "Latest Q"
-        if qtr_label and qtr_label != "Latest Q":
-            qtr_label = f"Q {qtr_label}"
+        # Quarter label — try c_quarter, then first label from acceleration list
+        _labels = eg.get("c_qtr_labels", [])
+        _raw_label = c_qtr or (_labels[0] if _labels else None)
+        qtr_label = f"Q {_raw_label}" if _raw_label else "Latest Q"
+
         c_value = f"{qtr_label} EPS {_pct_str(c_eps_g)} vs year-ago Q"
         if c_eps_v is not None and c_prior is not None:
             c_value += f"  (${c_eps_v:.2f} vs ${c_prior:.2f})"
         if c_rev_g is not None:
             c_value += f"  |  Rev {_pct_str(c_rev_g)} vs year-ago Q"
-        # Acceleration trend across last 4 quarters (oldest → newest)
+        elif c_rev_g is None:
+            c_value += "  |  Rev N/A"
+
+        # 4Q acceleration trend — show what we have (even if only 2 quarters)
         if len(c_growths) >= 2:
-            # Pair EPS value with growth rate: $1.23(+54%) per quarter
             parts = []
             for i, g in enumerate(reversed(c_growths)):
-                eps_i = len(c_growths) - 1 - i   # index in c_qtr_eps (reversed)
+                eps_i = len(c_growths) - 1 - i
                 if eps_i < len(c_qtr_eps):
                     parts.append(f"${c_qtr_eps[eps_i]}({g:+.1f}%)")
                 else:
                     parts.append(f"{g:+.1f}%")
             trend = " → ".join(parts)
             accel_icon = "✅ Accelerating" if c_accel_full else ("↗ Improving" if c_accel else "⚠️ Decelerating")
-            c_value += f"\n4Q trend: {trend}  {accel_icon}"
+            n = len(c_growths)
+            c_value += f"\n{n}Q trend: {trend}  {accel_icon}"
+        else:
+            c_value += "\nAcceleration: insufficient data (need 8 qtrs from FMP)"
 
     c_status = "—"
     if c_eps_g is not None:
