@@ -190,30 +190,86 @@ def fetch_earnings_growth(symbol: str) -> dict:
         except Exception:
             pass
 
-    # Fallback: yfinance quarterly financials (works on cloud via download endpoint)
+    # Fallback: yfinance quarterly financials
     if result["c_eps_growth"] is None:
         try:
             import yfinance as yf
             tk = yf.Ticker(symbol)
             q = tk.quarterly_income_stmt
-            if q is not None and not q.empty and "Net Income" in q.index:
-                ni = q.loc["Net Income"].dropna()
-                if len(ni) >= 5:
-                    cur_ni  = float(ni.iloc[0])
-                    yago_ni = float(ni.iloc[4])
-                    if yago_ni != 0:
-                        result["c_eps_growth"] = (cur_ni - yago_ni) / abs(yago_ni) * 100
+            if q is not None and not q.empty:
+                # Prefer per-share EPS; fall back to Net Income (not ideal but better than nothing)
+                eps_row = None
+                for candidate in ("Basic EPS", "Diluted EPS", "Net Income"):
+                    if candidate in q.index:
+                        eps_row = candidate
+                        break
+
+                rev_row = "Total Revenue" if "Total Revenue" in q.index else None
+
+                if eps_row:
+                    eps_series = q.loc[eps_row].dropna()
+                    rev_series = q.loc[rev_row].dropna() if rev_row else None
+
+                    # Quarter labels from column timestamps
+                    labels = [str(ts)[:7] for ts in eps_series.index]
+
+                    if len(eps_series) >= 5:
+                        cur_eps  = float(eps_series.iloc[0])
+                        yago_eps = float(eps_series.iloc[4])
+                        if yago_eps != 0:
+                            result["c_eps_growth"] = (cur_eps - yago_eps) / abs(yago_eps) * 100
+                        result["c_eps_current"] = round(cur_eps, 2)
+                        result["c_eps_prior"]   = round(yago_eps, 2)
+                        result["c_quarter"]     = labels[0] if labels else None
+
+                        if rev_series is not None and len(rev_series) >= 5:
+                            cur_rev  = float(rev_series.iloc[0])
+                            yago_rev = float(rev_series.iloc[4])
+                            if yago_rev != 0:
+                                result["c_rev_growth"] = (cur_rev - yago_rev) / abs(yago_rev) * 100
+
+                        # Acceleration: YoY growth rate for each of last 4 quarters
+                        qtr_growths, qtr_labels, qtr_eps = [], [], []
+                        for i in range(min(4, len(eps_series) - 4)):
+                            e_cur  = float(eps_series.iloc[i])
+                            e_prev = float(eps_series.iloc[i + 4])
+                            if e_prev != 0:
+                                g = (e_cur - e_prev) / abs(e_prev) * 100
+                                qtr_growths.append(round(g, 1))
+                                qtr_labels.append(labels[i] if i < len(labels) else "")
+                                qtr_eps.append(round(e_cur, 2))
+                        result["c_qtr_growths"] = qtr_growths
+                        result["c_qtr_labels"]  = qtr_labels
+                        result["c_qtr_eps"]     = qtr_eps
+                        if len(qtr_growths) >= 2:
+                            result["c_accelerating"] = qtr_growths[0] > qtr_growths[1]
+                        if len(qtr_growths) >= 4:
+                            result["c_accel_full"] = (
+                                qtr_growths[0] > qtr_growths[1] > qtr_growths[2] > qtr_growths[3]
+                            )
+
+            # Annual EPS growth using same EPS metric
             a = tk.income_stmt
-            if a is not None and not a.empty and "Net Income" in a.index:
-                ni_a = a.loc["Net Income"].dropna()
-                if len(ni_a) >= 2:
-                    growths = []
-                    for i in range(min(3, len(ni_a) - 1)):
-                        prev = float(ni_a.iloc[i + 1])
-                        if prev != 0:
-                            growths.append((float(ni_a.iloc[i]) - prev) / abs(prev) * 100)
-                    if growths:
-                        result["a_eps_growth_3yr"] = sum(growths) / len(growths)
+            if a is not None and not a.empty:
+                a_eps_row = None
+                for candidate in ("Basic EPS", "Diluted EPS", "Net Income"):
+                    if candidate in a.index:
+                        a_eps_row = candidate
+                        break
+                if a_eps_row:
+                    eps_a = a.loc[a_eps_row].dropna()
+                    if len(eps_a) >= 2:
+                        growths = []
+                        for i in range(min(3, len(eps_a) - 1)):
+                            prev = float(eps_a.iloc[i + 1])
+                            if prev != 0:
+                                growths.append((float(eps_a.iloc[i]) - prev) / abs(prev) * 100)
+                        if growths:
+                            result["a_eps_growth_3yr"] = sum(growths) / len(growths)
+                        result["a_eps_years"] = [
+                            {"year": str(ts)[:4], "eps": round(float(v), 2)}
+                            for ts, v in zip(eps_a.index[:4], eps_a.iloc[:4])
+                        ]
         except Exception:
             pass
 
