@@ -1,0 +1,15 @@
+{
+  "_comment": "Tickers to pre-fetch earnings + news data for. Keep in sync with your Google Sheets watchlist. TSX stocks use the .TO suffix.",
+  "watchlist": [
+    "NVDA",
+    "TSLA",
+    "META",
+    "AMZN",
+    "MSFT",
+    "AAPL",
+    "GOOG",
+    "VFV.TO",
+    "VIU.TO",
+    "CGL-C.TO"
+  ]
+}

@@ -5,6 +5,8 @@
 !PortfolioReport/Config/currency_overrides.json
 !PortfolioReport/Config/sector_cache.json
 !PortfolioReport/Config/description_cache.json
+!PortfolioReport/earnings_cache.json
+!scripts/tickers.json
 .env
 *.key
 STREAMLIT_SECRETS.toml

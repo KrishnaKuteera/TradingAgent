@@ -6,9 +6,24 @@ Price history still comes from yfinance (different Yahoo endpoint, works on clou
 API key priority: FMP_API_KEY env var → st.secrets["fmp"]["api_key"]
 """
 
+import json
 import os
 import requests
+from pathlib import Path
 from typing import Optional
+
+_CACHE_FILE = Path(__file__).parent.parent / "earnings_cache.json"
+_cache: Optional[dict] = None
+
+
+def _load_cache() -> dict:
+    global _cache
+    if _cache is None:
+        try:
+            _cache = json.loads(_CACHE_FILE.read_text()).get("data", {})
+        except Exception:
+            _cache = {}
+    return _cache
 
 _BASE = "https://financialmodelingprep.com/stable"
 
@@ -108,12 +123,31 @@ def fetch_news(symbol: str, limit: int = 3) -> list:
 def fetch_earnings_growth(symbol: str) -> dict:
     """Fetch C and A data: quarterly EPS growth, acceleration, and 3-yr annual EPS growth.
 
-    Returns dict with keys:
-      c_eps_growth (% vs year ago), c_rev_growth, c_accelerating (bool),
-      c_eps_current, c_eps_prior, c_quarter,
-      a_eps_growth_3yr, a_roe, a_eps_years
-    Falls back to yfinance income_stmt if FMP fails.
+    Priority: weekly pre-fetched cache (earnings_cache.json) → FMP API → yfinance fallback.
+    Cache is populated by scripts/refresh_cache.py (runs weekly via GitHub Actions).
     """
+    cache = _load_cache()
+    if symbol in cache:
+        cached = cache[symbol]
+        # Return all expected keys, filling any missing ones with defaults
+        return {
+            "c_eps_growth":    cached.get("c_eps_growth"),
+            "c_rev_growth":    cached.get("c_rev_growth"),
+            "c_eps_current":   cached.get("c_eps_current"),
+            "c_eps_prior":     cached.get("c_eps_prior"),
+            "c_quarter":       cached.get("c_quarter"),
+            "c_qtr_growths":   cached.get("c_qtr_growths", []),
+            "c_qtr_labels":    cached.get("c_qtr_labels", []),
+            "c_qtr_eps":       cached.get("c_qtr_eps", []),
+            "c_accelerating":  cached.get("c_accelerating", False),
+            "c_accel_full":    cached.get("c_accel_full", False),
+            "a_eps_growth_3yr": cached.get("a_eps_growth_3yr"),
+            "a_roe":           cached.get("a_roe"),
+            "a_eps_years":     cached.get("a_eps_years", []),
+            "n_catalyst":      cached.get("n_catalyst"),
+            "n_headlines":     cached.get("n_headlines", []),
+        }
+
     key = _api_key()
     result = {
         "c_eps_growth": None, "c_rev_growth": None,

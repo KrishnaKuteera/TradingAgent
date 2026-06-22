@@ -1,0 +1,435 @@
+{
+  "updated": "2026-06-22T02:33:04.176026+00:00",
+  "data": {
+    "NVDA": {
+      "c_eps_growth": 211.7,
+      "c_rev_growth": 85.2,
+      "c_eps_current": 2.4,
+      "c_eps_prior": 0.77,
+      "c_quarter": "2026-04",
+      "c_qtr_growths": [
+        211.7
+      ],
+      "c_qtr_labels": [
+        "2026-04"
+      ],
+      "c_qtr_eps": [
+        2.4
+      ],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": 266.3,
+      "a_roe": null,
+      "a_eps_years": [
+        {
+          "year": "2026",
+          "eps": 4.93
+        },
+        {
+          "year": "2025",
+          "eps": 2.97
+        },
+        {
+          "year": "2024",
+          "eps": 1.21
+        },
+        {
+          "year": "2023",
+          "eps": 0.18
+        }
+      ],
+      "n_headlines": [
+        "Most Investors Have Never Heard of This Nuclear Stock Related to SpaceX. That's About to Change.",
+        "1 Mind-Boggling Metric That Makes Nvidia Stock a Screaming Buy",
+        "Will EV Stocks Make a Comeback in 2026?",
+        "It\u2019s SpaceX IPO Day!",
+        "The AI Arms Race Isn\u2019t About Technology \u2013 It\u2019s About Electricity",
+        "You Can't Buy Anthropic Stock Yet, but You Can Buy These 4 AI Stocks Instead"
+      ],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:05.010732+00:00"
+    },
+    "TSLA": {
+      "c_eps_growth": 15.4,
+      "c_rev_growth": 15.8,
+      "c_eps_current": 0.15,
+      "c_eps_prior": 0.13,
+      "c_quarter": "2026-03",
+      "c_qtr_growths": [
+        15.4
+      ],
+      "c_qtr_labels": [
+        "2026-03"
+      ],
+      "c_qtr_eps": [
+        0.15
+      ],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": -27.5,
+      "a_roe": null,
+      "a_eps_years": [
+        {
+          "year": "2025",
+          "eps": 1.18
+        },
+        {
+          "year": "2024",
+          "eps": 2.23
+        },
+        {
+          "year": "2023",
+          "eps": 4.73
+        },
+        {
+          "year": "2022",
+          "eps": 4.02
+        }
+      ],
+      "n_headlines": [
+        "Cathie Wood Loads Up on SpaceX Stock. She Is Betting Big That Musk\u2019s AI Vision Will Pay Off.",
+        "Is Alphabet the Best \"Magnificent Seven\" AI Stock?",
+        "Nothing Seems to Be Going Right for Meta Platforms. How to Play META Stock Here.",
+        "Tesla Has Only 69 Robotaxis In Texas \u2014 But They Are Cheap",
+        "Why This Mega-Cap Stock Might Be the Best Crash Warning We Have",
+        "A SpaceX-Tesla Merger Could Manufacture A $5 Trillion Giant: Here's What Prediction Markets Say"
+      ],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:05.607565+00:00"
+    },
+    "META": {
+      "c_eps_growth": 60.4,
+      "c_rev_growth": 33.1,
+      "c_eps_current": 10.57,
+      "c_eps_prior": 6.59,
+      "c_quarter": "2026-03",
+      "c_qtr_growths": [
+        60.4
+      ],
+      "c_qtr_labels": [
+        "2026-03"
+      ],
+      "c_qtr_eps": [
+        10.57
+      ],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": 45.2,
+      "a_roe": null,
+      "a_eps_years": [
+        {
+          "year": "2025",
+          "eps": 23.98
+        },
+        {
+          "year": "2024",
+          "eps": 24.61
+        },
+        {
+          "year": "2023",
+          "eps": 15.19
+        },
+        {
+          "year": "2022",
+          "eps": 8.63
+        }
+      ],
+      "n_headlines": [
+        "Tech, crypto firms to help tackle illegal wildlife trade",
+        "EXCLUSIVE: Google And Meta May Have The Most To Lose In The AI\u2011Agent Era, Says Founder Who Rejected OpenAI",
+        "Veteran Tech Investor: Meta Is \u2018One of the Best Advertising Machines Ever Built\u2019 With 46% Upside",
+        "Why TSMC Doesn\u2019t Even Need to Win the AI Race",
+        "Is Alphabet the Best \"Magnificent Seven\" AI Stock?",
+        "Nothing Seems to Be Going Right for Meta Platforms. How to Play META Stock Here."
+      ],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:06.263308+00:00"
+    },
+    "AMZN": {
+      "c_eps_growth": 74.1,
+      "c_rev_growth": 16.6,
+      "c_eps_current": 2.82,
+      "c_eps_prior": 1.62,
+      "c_quarter": "2026-03",
+      "c_qtr_growths": [
+        74.1
+      ],
+      "c_qtr_labels": [
+        "2026-03"
+      ],
+      "c_qtr_eps": [
+        2.82
+      ],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": 437.8,
+      "a_roe": null,
+      "a_eps_years": [
+        {
+          "year": "2025",
+          "eps": 7.29
+        },
+        {
+          "year": "2024",
+          "eps": 5.66
+        },
+        {
+          "year": "2023",
+          "eps": 2.95
+        },
+        {
+          "year": "2022",
+          "eps": -0.27
+        }
+      ],
+      "n_headlines": [
+        "Why TSMC Doesn\u2019t Even Need to Win the AI Race",
+        "Down 10% From Its Peak, Is Amazon Stock the Ultimate Summer Buying Opportunity?",
+        "Is Alphabet the Best \"Magnificent Seven\" AI Stock?",
+        "Jeff Bezos Sets His Sights on a $70 Trillion Market. That\u2019s 10X Bigger than the Ecommerce Market Amazon Dominated",
+        "We\u2019re Bullish on Amazon With 36% Upside From Current Levels",
+        "Is It Too Late to Buy SpaceX Stock?"
+      ],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:06.890863+00:00"
+    },
+    "MSFT": {
+      "c_eps_growth": 23.3,
+      "c_rev_growth": 18.3,
+      "c_eps_current": 4.28,
+      "c_eps_prior": 3.47,
+      "c_quarter": "2026-03",
+      "c_qtr_growths": [
+        23.3
+      ],
+      "c_qtr_labels": [
+        "2026-03"
+      ],
+      "c_qtr_eps": [
+        4.28
+      ],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": 12.6,
+      "a_roe": null,
+      "a_eps_years": [
+        {
+          "year": "2025",
+          "eps": 13.7
+        },
+        {
+          "year": "2024",
+          "eps": 11.86
+        },
+        {
+          "year": "2023",
+          "eps": 9.72
+        },
+        {
+          "year": "2022",
+          "eps": 9.7
+        }
+      ],
+      "n_headlines": [
+        "Microsoft\u2019s Satya Nadella: We Can\u2019t Let AI Giants Eat the Economy",
+        "Why TSMC Doesn\u2019t Even Need to Win the AI Race",
+        "Is Alphabet the Best \"Magnificent Seven\" AI Stock?",
+        "Nothing Seems to Be Going Right for Meta Platforms. How to Play META Stock Here.",
+        "Apple\u2019s Incoming CEO Draws a Line on AI: Tools Serve Products, Not the Reverse",
+        "Apple Will Raise Prices Due To Soaring Memory Costs: CEO Tim Cook Says 'This Is A 100-Year Flood'"
+      ],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:07.477395+00:00"
+    },
+    "AAPL": {
+      "c_eps_growth": 22.4,
+      "c_rev_growth": 16.6,
+      "c_eps_current": 2.02,
+      "c_eps_prior": 1.65,
+      "c_quarter": "2026-03",
+      "c_qtr_growths": [
+        22.4
+      ],
+      "c_qtr_labels": [
+        "2026-03"
+      ],
+      "c_qtr_eps": [
+        2.02
+      ],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": 7.3,
+      "a_roe": null,
+      "a_eps_years": [
+        {
+          "year": "2025",
+          "eps": 7.49
+        },
+        {
+          "year": "2024",
+          "eps": 6.11
+        },
+        {
+          "year": "2023",
+          "eps": 6.16
+        },
+        {
+          "year": "2022",
+          "eps": 6.15
+        }
+      ],
+      "n_headlines": [
+        "MRVL, INTC, MU Stocks Hit 52-Week Highs Last Week: What Fueled The Surge?",
+        "It\u2019s SpaceX IPO Day!",
+        "New OpenAI Hire Warns Government Monopoly on AI Could Lead to \u2018Very Scary Outcomes\u2019",
+        "Why TSMC Doesn\u2019t Even Need to Win the AI Race",
+        "Trump says Intel will make chips for Apple in a major win for U.S. manufacturing",
+        "Intel Is Stealing the Foundry Spotlight. Is TSMC Still the Most Important Company in Chips?"
+      ],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:08.091184+00:00"
+    },
+    "GOOG": {
+      "c_eps_growth": 82.0,
+      "c_rev_growth": 21.8,
+      "c_eps_current": 5.17,
+      "c_eps_prior": 2.84,
+      "c_quarter": "2026-03",
+      "c_qtr_growths": [
+        82.0
+      ],
+      "c_qtr_labels": [
+        "2026-03"
+      ],
+      "c_qtr_eps": [
+        5.17
+      ],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": 33.5,
+      "a_roe": null,
+      "a_eps_years": [
+        {
+          "year": "2025",
+          "eps": 10.91
+        },
+        {
+          "year": "2024",
+          "eps": 8.13
+        },
+        {
+          "year": "2023",
+          "eps": 5.84
+        },
+        {
+          "year": "2022",
+          "eps": 4.59
+        }
+      ],
+      "n_headlines": [
+        "Microsoft\u2019s Satya Nadella: We Can\u2019t Let AI Giants Eat the Economy",
+        "Tech, crypto firms to help tackle illegal wildlife trade",
+        "Morningstar Says SpaceX Could Be Worth Less Than Half Its $1.75 Trillion IPO Price",
+        "EXCLUSIVE: Google And Meta May Have The Most To Lose In The AI\u2011Agent Era, Says Founder Who Rejected OpenAI",
+        "Why TSMC Doesn\u2019t Even Need to Win the AI Race",
+        "Is Alphabet the Best \"Magnificent Seven\" AI Stock?"
+      ],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:08.691819+00:00"
+    },
+    "VFV.TO": {
+      "c_eps_growth": null,
+      "c_rev_growth": null,
+      "c_eps_current": null,
+      "c_eps_prior": null,
+      "c_quarter": null,
+      "c_qtr_growths": [],
+      "c_qtr_labels": [],
+      "c_qtr_eps": [],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": null,
+      "a_roe": null,
+      "a_eps_years": [],
+      "n_headlines": [],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:09.094901+00:00"
+    },
+    "VIU.TO": {
+      "c_eps_growth": null,
+      "c_rev_growth": null,
+      "c_eps_current": null,
+      "c_eps_prior": null,
+      "c_quarter": null,
+      "c_qtr_growths": [],
+      "c_qtr_labels": [],
+      "c_qtr_eps": [],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": null,
+      "a_roe": null,
+      "a_eps_years": [],
+      "n_headlines": [],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:09.511660+00:00"
+    },
+    "CGL-C.TO": {
+      "c_eps_growth": null,
+      "c_rev_growth": null,
+      "c_eps_current": null,
+      "c_eps_prior": null,
+      "c_quarter": null,
+      "c_qtr_growths": [],
+      "c_qtr_labels": [],
+      "c_qtr_eps": [],
+      "c_accelerating": false,
+      "c_accel_full": false,
+      "a_eps_growth_3yr": null,
+      "a_roe": null,
+      "a_eps_years": [],
+      "n_headlines": [],
+      "n_catalyst": {
+        "catalyst_type": "none",
+        "summary": "No news available.",
+        "score": "none"
+      },
+      "fetched_at": "2026-06-22T02:33:09.964143+00:00"
+    }
+  }
+}

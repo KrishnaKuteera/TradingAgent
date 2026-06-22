@@ -1,0 +1,37 @@
+name: Refresh Earnings Cache
+
+on:
+  schedule:
+    # Every Sunday at 3am UTC (Saturday 11pm EST — after US markets close Friday)
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+    # Also allow manual trigger from GitHub Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install yfinance anthropic
+
+      - name: Run refresh script
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 scripts/refresh_cache.py
+
+      - name: Commit and push cache
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add PortfolioReport/earnings_cache.json
+          git diff --staged --quiet || git commit -m "chore: weekly earnings cache refresh $(date -u +%Y-%m-%d)"
+          git push
