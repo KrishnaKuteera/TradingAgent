@@ -212,14 +212,20 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
     except Exception:
         pass
 
-    # News for N
+    # News for N — prefer cache (n_headlines + n_catalyst from weekly refresh), fall back to FMP
+    n_catalyst = eg.get("n_catalyst") if eg else None
+    n_headlines = eg.get("n_headlines", []) if eg else []
     news_items = []
-    try:
-        from .fmp import fetch_news
-        news_items = fetch_news(symbol, limit=3)
-    except Exception:
-        pass
-    news_str = " | ".join(f"{n['date']}: {n['title'][:90]}" for n in news_items) if news_items else ""
+    if n_headlines:
+        # Cache has headlines from yfinance (populated by refresh_cache.py)
+        news_items = [{"title": h, "date": ""} for h in n_headlines[:3]]
+    else:
+        try:
+            from .fmp import fetch_news
+            news_items = fetch_news(symbol, limit=3)
+        except Exception:
+            pass
+    news_str = " | ".join(f"{n['title'][:90]}" for n in news_items) if news_items else ""
 
     # Format C values
     def _pct_str(val, suffix=""):
@@ -266,7 +272,7 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
             n = len(c_growths)
             c_value += f"\n{n}Q trend: {trend}  {accel_icon}"
         else:
-            c_value += "\nAcceleration: insufficient data (need 8 qtrs from FMP)"
+            c_value += "\nAcceleration: insufficient data (need 8+ quarters of history)"
 
     c_status = "—"
     if c_eps_g is not None:
@@ -327,11 +333,15 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
             "Criterion": "New product, service, management, or industry shift",
             "Status": "📋 Manual review",
             "Action": "—",
-            "Value": news_items[0]["title"][:80] if news_items else "No recent news via FMP",
+            "Value": (
+                f"Claude: {n_catalyst['summary']}" if n_catalyst and n_catalyst.get("score") != "none"
+                else (news_items[0]["title"][:80] if news_items else "No recent news found")
+            ),
             "Rule Description": (
                 "O'Neil: the biggest stock moves are driven by something NEW — "
                 "a breakthrough product, new CEO, disruptive technology, or a major industry change. "
-                "Latest headlines: " + (news_str if news_str else "none found.")
+                + (f"Claude assessment: {n_catalyst['catalyst_type']} ({n_catalyst['score']}). " if n_catalyst and n_catalyst.get("score") != "none" else "")
+                + ("Latest headlines: " + news_str if news_str else "No recent headlines found.")
             ),
         },
         # S — Supply and demand (volume)
