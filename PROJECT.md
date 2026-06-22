@@ -182,6 +182,45 @@ both local and cloud always read/write from the same place.
 
 ---
 
+## Setting Up on a New Laptop
+
+Everything in GitHub comes down automatically. The only manual step is restoring the secrets that are intentionally NOT in GitHub.
+
+### Step 1 — Clone the repo
+```bash
+cd ~/Documents
+mkdir Nanda_Investment && cd Nanda_Investment
+git clone https://github.com/KrishnaKuteera/TradingAgent.git
+```
+
+### Step 2 — Restore secrets (copy from old laptop or original source)
+
+These files are gitignored and must be placed manually:
+
+| File | Destination | Where to get it |
+|------|-------------|----------------|
+| `ChanduAPITracker` | `TradeAgent/PortfolioReport/Config/` | Copy from old laptop |
+| `NanduAPITracker` | `TradeAgent/PortfolioReport/Config/` | Copy from old laptop |
+| `FMP_Api.rtf` | `TradeAgent/PortfolioReport/Config/` | Copy from old laptop |
+| `GitHub_GIST_Token.rtf` | `TradeAgent/PortfolioReport/Config/` | Copy from old laptop |
+| `tradeportfolioagent-8348ccf38790.json` | `TradeAgent/` | Google Cloud Console → IAM → Service Accounts → download key |
+
+### Step 3 — Install dependencies
+```bash
+cd TradeAgent
+pip install -r requirements.txt
+```
+
+### Step 4 — Verify
+```bash
+python3 PortfolioReport/generate_report.py
+```
+
+**Streamlit Cloud is unaffected** — it runs from GitHub directly, not your laptop.
+The live app at `greencandlecult.streamlit.app` keeps running even if your laptop is off or wiped.
+
+---
+
 ## Running the HTML Report Locally
 
 ```bash
