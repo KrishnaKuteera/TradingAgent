@@ -238,13 +238,16 @@ These are not called by default — restore calls in `main()` if Questrade API b
 
 ## Next Steps
 
-### High priority
+### High priority — done
 - [x] **Fix token rotation** — GitHub Gist-based sync (automatic, no cloud deploy needed)
 - [x] Add Nandu's Questrade API refresh token to `Config/NanduAPITracker`
-- [ ] **Tier 2 CAN SLIM** — Institutional ownership, Follow-through day detection, Industry group rank
+- [x] **Tier 1 CAN SLIM** — EPS growth, ROE, earnings date, IBD-weighted RS, float/avg vol
+
+### High priority — pending
+- [ ] **Tier 2 CAN SLIM** — see roadmap below (institutional ownership, FTD detection, industry group rank)
 
 ### Medium priority
-- [ ] **Auto-sync `PortfolioReport/src/`** to `TradeAgent/PortfolioReport/src/` — currently a manual `cp` step; a pre-commit hook or symlink would eliminate drift
+- [ ] **Auto-sync `PortfolioReport/src/`** to `TradeAgent/PortfolioReport/src/` — currently a manual `cp` step
 - [ ] Fix `startTime` parameter for activities endpoint if activity tracking is needed
 
 ### Low priority / cleanup
@@ -254,67 +257,69 @@ These are not called by default — restore calls in `main()` if Questrade API b
 
 ## CAN SLIM Data Accuracy — Improvement Roadmap
 
-Every CAN SLIM row needs better data. This section tracks what to build, in order of effort vs impact.
+### What is complete (Tier 1 ✅)
 
-### Current gaps by letter
+| Letter | What we have | Source |
+|--------|-------------|--------|
+| **C** | Quarterly EPS YoY growth %, revenue growth %, acceleration trend (3 qtrs), beat/miss vs estimate | FMP `/income-statement` + `/earnings-surprises` |
+| **A** | 3-yr avg annual EPS growth %, ROE % vs 17% threshold, year-by-year EPS table | FMP `/income-statement` + `/key-metrics` |
+| **N** | Latest 3 news headlines with dates | FMP `/news` |
+| **S** | Today's vol vs 50-day avg, float, avg daily volume | yfinance daily + FMP `/profile` |
+| **L** | IBD-weighted RS (2× last 63 days, 1× prior periods) — approximate | yfinance 1yr OHLCV |
+| **I** | Float heuristic (10M–500M = institutional range) — placeholder only | FMP `/profile` |
+| **M** | SPY + QQQ vs 50/200-SMA, distribution day count | FMP quotes + yfinance |
 
-| Letter | Criterion | Current state | Gap |
-|--------|-----------|---------------|-----|
-| **C** | Current quarterly EPS & revenue | FMP quarterly income-statement + yfinance fallback | Missing earnings surprise (beat/miss vs estimate). TSX stocks may lag. |
-| **A** | Annual EPS growth + ROE | FMP annual income-statement + yfinance fallback | ROE not fetched. Need FMP `/key-metrics` for ROE ≥ 17% check. |
-| **N** | New product / mgmt / industry shift | FMP `/news` (3 headlines) | Headlines only — no catalyst classification, no sentiment score. Manual remains best until DeepVue screenshots are integrated. |
-| **S** | Volume surge on breakout day | yfinance last-day vol vs 50-day avg | We check today's volume, not the volume on the actual breakout pivot day. Need to detect the pivot and check vol on that specific day. |
-| **L** | Leader — RS Rating ≥ 80 | Our computed RS (1-yr return ratio) | IBD formula weights last 63 days at 2×. Industry group rank missing. Our RS is approximate. |
-| **I** | Institutional sponsorship (rising) | Manual review only | **Biggest gap.** FMP `/institutional-ownership` is free tier and gives holder count per quarter — automates this entirely. |
-| **M** | Market direction | SPY/QQQ vs 50/200-SMA | Too basic. O'Neil's real definition is a **follow-through day (FTD)**: index up ≥1.25% on higher vol than prior day, on day 4+ of a rally attempt. Also missing: advance/decline breadth, new highs vs lows count. |
+### What is still missing (Tier 2 — build next)
 
----
+| Letter | Gap | Source | Effort |
+|--------|-----|--------|--------|
+| **C** | TSX earnings may lag or be missing | FMP coverage | Low — add fallback message |
+| **S** | We check *today's* vol, not the actual breakout pivot day | yfinance daily OHLCV | Medium — detect pivot high, check vol on that day |
+| **L** | Industry group rank missing — O'Neil requires leading stock in a *leading group* | FMP `/sector-performance` | Medium |
+| **I** | No actual institutional holder count or QoQ change | FMP `/institutional-ownership` | Medium — biggest gap, fully automatable |
+| **M** | SMA check too basic — O'Neil's definition is a **Follow-Through Day (FTD)** | yfinance SPY/QQQ daily | Medium-hard — see spec below |
+| **N** | Headlines only, no catalyst scoring, no sentiment | DeepVue screenshots (future) | Hard |
 
-### Recommended build order
+### Tier 2 specs
 
-#### Tier 1 — Low effort, high value (do these first)
+#### I — Institutional ownership (FMP `/institutional-ownership`)
+- Call `FMP /institutional-ownership?symbol=X` — returns holder count + % owned per quarter
+- Compare latest quarter vs prior → "Rising: 342 → 389 holders (+13.7%)" or "Falling"
+- Status: ✅ if rising + count > 100, ⚠️ if flat, ❌ if falling
 
-- [x] **Earnings surprise for C** — `FMP /earnings-surprises` → implemented in `fmp.fetch_earnings_surprise()`. Returns beat/miss counts and avg surprise %.
-- [x] **ROE for A** — `FMP /key-metrics` → implemented in `fmp.fetch_key_metrics()`. Checks if ROE ≥ 17% (O'Neil threshold).
-- [x] **Earnings next date** — `FMP /earnings-calendar` → implemented in `fmp.fetch_earnings_calendar()`. Returns next earnings date.
-- [x] **IBD-weighted RS formula for L** — implemented in `screener._ibd_rs_rating()`. Uses 2× weight on last 63 days, 1× for prior 63-day periods.
-- [x] **Float & avg volume for S** — extracted from FMP `/profile`. `fetch_profiles()` now returns float and avgVolume fields.
+#### M — Follow-Through Day detection
+O'Neil's exact definition of a confirmed uptrend (not just SMA):
+1. Market pulls back — find the most recent closing low
+2. Day 1 of rally attempt = any up-close day after that low
+3. Count forward from Day 1
+4. **FTD** = Day 4 or later where index closes up **≥ 1.25%** on **higher volume** than prior session
+5. FTD is invalidated if index undercuts the Day 1 low before it fires
 
-#### Tier 2 — Medium effort, fills biggest gaps
+Show: `"Confirmed uptrend — FTD: 2025-06-14 (SPY +1.8% on higher vol)"`  
+or: `"Rally attempt Day 3 — not yet confirmed"`  
+or: `"Under pressure — no rally attempt"`
 
-- [ ] **Institutional ownership for I** — `FMP /institutional-ownership?symbol=X` returns quarterly holder count and % ownership. Compare current vs prior quarter → show rising/falling trend. Automates I completely. 2–3 hours.
-- [ ] **Follow-through day detection for M** — compute from SPY/QQQ daily data already downloaded via yfinance:
-  1. Detect a rally attempt (index closes up after a low)
-  2. Count days since attempt
-  3. FTD = day 4+ where index closes up ≥1.25% on volume higher than prior session
-  4. Distribution day = index drops ≥0.2% on higher volume
-  Show: "Confirmed uptrend (FTD: 2025-06-14)" or "Rally attempt day 3 — not yet confirmed"
-  3–4 hours.
-- [ ] **Industry group rank for L** — `FMP /sector-performance` or build a mini-screener that compares sector/industry RS vs SPY. Show where the stock's sector ranks. 2–3 hours.
+Data: yfinance `download("SPY QQQ", period="3mo")` — already downloaded
 
-#### Tier 3 — Hard / requires manual input or paid data
-
-- [ ] **N — catalyst classification** — DeepVue screenshot upload to populate new product / management change / industry shift. TODO stub already in code.
-- [ ] **Base pattern recognition for S** — detect cup-with-handle, flat base, etc. from chart data. Complex, needs chart analysis logic.
-- [ ] **IBD RS Rating (paid)** — most accurate L source. Only needed if our computed RS proves unreliable.
-- [ ] **News sentiment scoring** — Alpha Vantage or similar for N. Paid tier needed for meaningful signal.
-
----
+#### L — Industry group rank
+- Use FMP `/sector-performance` to rank all sectors by 1M and 3M return vs SPY
+- Show: stock's sector rank out of ~11 sectors (e.g. "Technology — Rank 2/11")
+- Bonus: flag if sector is top-3 (✅) vs bottom-3 (❌)
 
 ### Data sources reference
 
 | Source | Endpoint | Free tier | What it gives |
 |--------|----------|-----------|---------------|
-| FMP | `/income-statement?period=quarter` | ✅ Yes | Quarterly EPS, revenue (C) |
-| FMP | `/income-statement?period=annual` | ✅ Yes | Annual EPS 4 years (A) |
-| FMP | `/key-metrics` | ✅ Yes | ROE, P/E, debt ratios (A) |
-| FMP | `/earnings-surprises` | ✅ Yes | Beat/miss vs estimate (C) |
-| FMP | `/earnings-calendar` | ✅ Yes | Next earnings date |
-| FMP | `/institutional-ownership` | ✅ Yes | Holder count QoQ (I) |
-| FMP | `/news` | ✅ Yes | Headlines (N) |
-| FMP | `/profile` | ✅ Yes | Float, avg vol, sector (S, L) |
-| FMP | `/sector-performance` | ✅ Yes | Sector RS vs SPY (L) |
-| yfinance | `download()` daily OHLCV | ✅ Yes | Price, volume history (S, L, M) |
+| FMP | `/income-statement?period=quarter` | ✅ | Quarterly EPS, revenue (C) |
+| FMP | `/income-statement?period=annual` | ✅ | Annual EPS 4 years (A) |
+| FMP | `/key-metrics` | ✅ | ROE, P/E, debt ratios (A) |
+| FMP | `/earnings-surprises` | ✅ | Beat/miss vs estimate (C) |
+| FMP | `/earnings-calendar` | ✅ | Next earnings date |
+| FMP | `/institutional-ownership` | ✅ | Holder count QoQ (I) — **Tier 2** |
+| FMP | `/news` | ✅ | Headlines (N) |
+| FMP | `/profile` | ✅ | Float, avg vol, sector (S, L) |
+| FMP | `/sector-performance` | ✅ | Sector RS vs SPY (L) — **Tier 2** |
+| yfinance | `download()` daily OHLCV | ✅ | Price, volume history (S, L, M, FTD) |
 | yfinance | `quarterly_income_stmt` | ⚠️ May block on cloud | Quarterly net income fallback (C) |
-| IBD | RS Rating | ❌ Paid | Gold standard for L |
-| DeepVue | Screenshot upload | 🔲 Manual | C, A, I (future) |
+| IBD | RS Rating | ❌ Paid | Gold standard for L — not needed yet |
+| DeepVue | Screenshot upload | 🔲 Manual | C, A, I — future Tier 3 |
