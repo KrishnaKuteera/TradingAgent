@@ -35,11 +35,11 @@ STATUS_ICON   = {"PASS": "✅", "FAIL": "❌", "WARN": "⚠️", "N/A": "—"}
 URGENCY_ORDER = {"IMMEDIATE": 0, "THIS WEEK": 1, "MONITOR": 2, "NONE": 3}
 
 _VERDICT_META = {
-    "buy":   ("🟢 Buy candidate",    0),
-    "watch": ("🟡 Watch — conflict", 1),
-    "sell":  ("🔴 Sell",             2),
-    "hold":  ("🔵 Hold",             3),
-    "mon":   ("⚪ Monitor",          4),
+    "buy":   ("🟢 Buy candidate",      0),
+    "hold":  ("🔵 Hold — keep position", 1),
+    "watch": ("🟡 Watch — mixed signals", 2),
+    "sell":  ("🔴 Sell",               3),
+    "mon":   ("⚪ Monitor",            4),
 }
 
 # ---------------------------------------------------------------------------
@@ -575,6 +575,9 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
     enriched = []
     for h in holdings:
         vtype, reason        = _verdict(h, rules_lookup)
+        # Portfolio mode: already own the stock — "buy" means "keep holding", not "enter new position"
+        if show_account and vtype == "buy":
+            vtype = "hold"
         bp, bt, sf, st_      = _scores(h["rule_results"], rules_lookup)
         label, sort_order    = _VERDICT_META[vtype]
         enriched.append({
