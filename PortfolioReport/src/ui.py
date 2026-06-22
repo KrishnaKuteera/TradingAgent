@@ -244,11 +244,11 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
             c_value += f"  (${c_eps_v:.2f} vs ${c_prior:.2f})"
         if c_rev_g is not None:
             c_value += f"  |  Rev {_pct_str(c_rev_g)} vs year-ago Q"
-        # Acceleration trend across last 3 quarters
+        # Acceleration trend across last 4 quarters (oldest → newest)
         if len(c_growths) >= 2:
             trend = " → ".join(f"{g:+.1f}%" for g in reversed(c_growths))
             accel_icon = "✅ Accelerating" if c_accel_full else ("↗ Improving" if c_accel else "⚠️ Decelerating")
-            c_value += f"\nQoQ trend: {trend}  {accel_icon}"
+            c_value += f"\n4Q trend: {trend}  {accel_icon}"
 
     c_status = "—"
     if c_eps_g is not None:
