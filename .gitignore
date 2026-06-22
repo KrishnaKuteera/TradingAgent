@@ -23,3 +23,13 @@ venv/
 
 # OS
 .DS_Store
+
+# Questrade tokens + API keys (never commit these)
+PortfolioReport/Config/ChanduAPITracker
+PortfolioReport/Config/NanduAPITracker
+PortfolioReport/Config/*.rtf
+PortfolioReport/Config/portfolio_snapshot.json
+
+# Local data files
+PortfolioReport/Data/
+PortfolioReport/Reports/
