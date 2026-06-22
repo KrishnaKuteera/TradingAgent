@@ -235,13 +235,12 @@ def _render_canslim_section(holding: dict, rules_lookup: dict):
 
     c_value = "—"
     if c_eps_g is not None:
-        c_value = f"EPS {_pct_str(c_eps_g)} YoY"
+        qtr_label = f"Q {c_qtr}" if c_qtr else "Latest Q"
+        c_value = f"{qtr_label} EPS {_pct_str(c_eps_g)} vs year-ago Q"
         if c_eps_v is not None and c_prior is not None:
             c_value += f"  (${c_eps_v:.2f} vs ${c_prior:.2f})"
         if c_rev_g is not None:
-            c_value += f"  |  Rev {_pct_str(c_rev_g)} YoY"
-        if c_qtr:
-            c_value += f"  [{c_qtr}]"
+            c_value += f"  |  Rev {_pct_str(c_rev_g)} vs year-ago Q"
 
     c_status = "—"
     if c_eps_g is not None:
