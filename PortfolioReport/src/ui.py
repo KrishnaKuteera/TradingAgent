@@ -634,7 +634,7 @@ def render_decision_view(holdings: list, rules: list, show_account: bool = True,
 
     # Track selection
     rows_sel = sel.selection.get("rows", []) if sel else []
-    if rows_sel:
+    if rows_sel and rows_sel[0] < len(enriched):
         st.session_state[f"{key}_selected"] = enriched[rows_sel[0]]["symbol"]
 
     selected_sym = st.session_state.get(f"{key}_selected")
