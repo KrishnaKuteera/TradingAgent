@@ -114,15 +114,21 @@ def _verdict(holding: dict, rules_lookup: dict):
     def _sell_reason():
         return " · ".join(f"{r['name']}: {r['value']}" for r in fired_sell[:3])
 
+    # Thresholds calibrated to current automatable buy rules:
+    # C (EPS) and A (annual EPS) reliably produce PASS/FAIL.
+    # S fires only near breakout; L requires paid IBD — both mostly N/A.
+    # So buy_pass=2 means both C+A pass = strong fundamental setup.
     if urgency == "IMMEDIATE":
         return "sell", _sell_reason()
-    if buy_pass >= 3 and market_ok and sell_fail <= 1:
+    if buy_pass >= 2 and market_ok and sell_fail == 0:
         return "buy", _buy_reason()
-    if buy_pass >= 3 and sell_fail >= 2:
+    if buy_pass >= 2 and market_ok and sell_fail <= 2:
+        return "buy", _buy_reason()
+    if buy_pass >= 2 and sell_fail >= 3:
         return "watch", _buy_reason() + " BUT " + _sell_reason()
-    if sell_fail >= 3 or urgency == "THIS WEEK":
+    if sell_fail >= 4 or urgency == "THIS WEEK":
         return "sell", _sell_reason()
-    if buy_pass >= 2:
+    if buy_pass >= 1:
         parts = [_buy_reason()]
         if _sell_reason():
             parts.append(_sell_reason())
