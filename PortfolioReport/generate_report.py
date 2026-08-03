@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 """Thin entry point — assembles modules from src/ and writes the HTML report."""
 
+import os
+import re
 from datetime import datetime
 from pathlib import Path
+
+# Set GITHUB_GIST_TOKEN from local RTF so Gist sync works when running locally
+def _load_gist_token():
+    rtf = Path(__file__).parent / "Config" / "GitHub_GIST_Token.rtf"
+    if rtf.exists() and not os.environ.get("GITHUB_GIST_TOKEN"):
+        tokens = re.findall(r'[A-Za-z0-9_]{20,}', rtf.read_text())
+        if tokens:
+            os.environ["GITHUB_GIST_TOKEN"] = tokens[-1]
+_load_gist_token()
 
 from src.data import load_all_from_questrade, get_fx
 from src.calc import get_all_symbols, load_sector_data, load_subsector_data, load_currency_overrides
