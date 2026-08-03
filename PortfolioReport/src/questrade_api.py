@@ -148,17 +148,15 @@ class QuestradeAPI:
         return response.json()
 
     def get_activities(self, account_num: str, start_time: int = None) -> dict:
-        """Fetch transaction history. startTime is Unix timestamp in milliseconds."""
+        """Fetch transaction history. Questrade requires ISO 8601 format for startTime."""
         headers = {"Authorization": f"Bearer {self.access_token}"}
         url = f"{self.api_server}v1/accounts/{account_num}/activities"
 
-        # Default to last 30 days if no startTime provided (Questrade default window)
-        if not start_time:
-            from datetime import timedelta
-            thirty_days_ago = datetime.now() - timedelta(days=30)
-            start_time = int(thirty_days_ago.timestamp() * 1000)
+        from datetime import timedelta
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        start_iso = thirty_days_ago.strftime("%Y-%m-%dT%H:%M:%S-05:00")
 
-        params = {'startTime': start_time}
+        params = {'startTime': start_iso}
 
         response = requests.get(url, headers=headers, params=params)
         if response.status_code != 200:
