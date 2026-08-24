@@ -60,31 +60,55 @@ class QuestradeAPI:
     def __init__(self, refresh_token_file: str = "ChanduAPITracker"):
         """Initialize API client with refresh token.
 
-        Token load priority: gist → local file.
-        Token save: always writes to both gist and local file.
+        Token load priority: gist → local file. If the gist token is stale (auth
+        fails) and the local file holds a *different* token — e.g. someone just
+        pasted a fresh one — automatically retry with that before giving up. A
+        successful auth always rotates and re-syncs both gist and local file, so
+        this self-heals a stale gist the next time anyone runs with a fresh local
+        token, with no manual gist edit required.
         gist_filename is derived from the basename of refresh_token_file.
         """
         self.token_file = refresh_token_file
         self.gist_filename = Path(refresh_token_file).name
-
-        # Try gist first, fall back to local file
-        token = _gist_read_token(self.gist_filename)
-        if token:
-            print(f"  ✓ Token loaded from gist ({self.gist_filename})")
-            try:
-                Path(refresh_token_file).write_text(token)
-            except Exception:
-                pass
-        else:
-            with open(refresh_token_file, 'r') as f:
-                token = f.read().strip()
-            print("  ✓ Token loaded from local file")
-
-        self.refresh_token = token
         self.access_token = None
         self.api_server = None
         self.accounts = {}
-        self.authenticate()
+
+        with open(refresh_token_file, 'r') as f:
+            local_token = f.read().strip()
+
+        gist_token = _gist_read_token(self.gist_filename)
+
+        if not gist_token:
+            self.token_source = "local file"
+            self.refresh_token = local_token
+            print("  ✓ Token loaded from local file")
+            self.authenticate()
+            return
+
+        self.token_source = "gist"
+        self.refresh_token = gist_token
+        print(f"  ✓ Token loaded from gist ({self.gist_filename})")
+        try:
+            Path(refresh_token_file).write_text(gist_token)
+        except Exception:
+            pass
+
+        try:
+            self.authenticate()
+        except Exception as gist_error:
+            if not local_token or local_token == gist_token:
+                raise
+            print(f"  ⚠ Gist token failed, retrying with local file token ({self.gist_filename})")
+            self.token_source = "local file (fallback after stale gist)"
+            self.refresh_token = local_token
+            try:
+                self.authenticate()
+            except Exception as local_error:
+                raise Exception(
+                    f"Both gist and local tokens failed for {self.gist_filename}. "
+                    f"gist error: {gist_error} | local error: {local_error}"
+                )
 
     def authenticate(self):
         """Exchange refresh token for access token (valid 30 minutes)."""
@@ -96,7 +120,13 @@ class QuestradeAPI:
 
         response = requests.post(url, params=params)
         if response.status_code != 200:
-            raise Exception(f"Authentication failed: {response.text}")
+            raise Exception(
+                f"Authentication failed ({self.token_source}): {response.text}. "
+                f"Refresh token is single-use and the gist is likely stale — get a fresh "
+                f"Questrade token, paste it into Config/{self.gist_filename}, then run "
+                f"`python3 PortfolioReport/push_tokens_to_gist.py` to sync it (see PROJECT.md "
+                f"'Questrade Token Rotation')."
+            )
 
         tokens = response.json()
         self.access_token = tokens['access_token']

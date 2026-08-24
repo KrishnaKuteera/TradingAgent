@@ -42,6 +42,7 @@ Nanda_Investment/
 │   │   └── rules_sheet.py                ← loads O'Neil rules from Google Sheets
 │   ├── PortfolioReport/                  ← shared engine used by all pages
 │   │   ├── generate_report.py            ← run locally to generate HTML report
+│   │   ├── push_tokens_to_gist.py        ← recovery: force-syncs local tokens → gist (see "Questrade Token Rotation")
 │   │   ├── PROJECT_QUESTRADE.md          ← this file
 │   │   ├── src/                          ← ALL shared code lives here
 │   │   │   ├── ui.py                     ← Streamlit UI components (tables, detail view)
@@ -167,18 +168,57 @@ Only `/tmp/` is writable. Caches and tokens fall back automatically:
 
 Questrade refresh tokens are **single-use** — they rotate on every API call.
 
-**Problem:** If you run `generate_report.py` locally, the local token updates but
-Streamlit Cloud still has the old (dead) token → `Authentication failed: Bad Request`.
+**Sync mechanism:** a private gist (`1bedc23f2daa0523457e63518d80c5c4`) is the
+**source of truth**. `QuestradeAPI.__init__` (`PortfolioReport/src/questrade_api.py`)
+always tries the **gist first**, and only falls back to the local
+`Config/ChanduAPITracker` / `NanduAPITracker` file (or Streamlit's
+`[questrade]` secrets, via `_setup_tokens()` in `pages/2_MyPortfolio.py`) if the
+gist read fails. Every successful auth call writes the newly-rotated token back
+to **both** the gist and the local file.
 
-**Rule:** Only use from one place at a time. If you run locally, update the cloud secret.
+**⚠️ Incident (2026-08-23):** the gist went stale on 2026-08-04 and sat dead for
+19 days. Because the gist was read *first*, every fresh token pasted into
+Streamlit secrets or the local tracker file was silently discarded before auth
+was even attempted — both accounts failed with `Authentication failed: Bad
+Request`, and re-pasting tokens anywhere except the gist looked like it "did
+nothing." There was no automatic way to break that deadlock at the time — a
+dead gist token could only be replaced by a successful auth, which couldn't
+happen while it was dead.
 
-**To fix after local run:**
-1. `cat TradeAgent/PortfolioReport/Config/ChanduAPITracker` — copy the new token
-2. Streamlit Cloud → App → ⋮ → Settings → Secrets → update `chandu_token`
-3. Save → app reboots automatically
+**Fixed as of this incident** — `QuestradeAPI.__init__` (`questrade_api.py`)
+now self-heals: if the gist token fails to auth and the local file holds a
+*different* token, it automatically retries with the local one. A successful
+auth always re-syncs both gist and local file. So in the future, **just
+pasting a fresh token into `Config/ChanduAPITracker`/`NanduAPITracker` (or
+Streamlit secrets, which `_setup_tokens()` writes into the local file) is
+enough** — the next run (local or cloud) auto-recovers and repairs the gist,
+no manual gist edit required. The auth-failure exception also now names the
+token source (gist vs local) so a failure is diagnosable instead of a bare
+"Bad Request".
+
+**Diagnose fast:** check the gist's `updated_at` — if it's more than a few days
+old and a normal run just failed, the self-heal already tried and failed too
+(meaning the local token is *also* dead, not just the gist).
+```bash
+curl -s https://api.github.com/gists/1bedc23f2daa0523457e63518d80c5c4 | python3 -c "import json,sys; print(json.load(sys.stdin)['updated_at'])"
+```
+
+**If self-heal can't recover it (both gist and local are dead):**
+1. Get fresh Questrade refresh tokens for Chandu/Nandu (Questrade → App Hub →
+   Personal Apps → regenerate).
+2. Paste them into `PortfolioReport/Config/ChanduAPITracker` and `NanduAPITracker`
+   (plain text, no newline needed) — this alone is enough; the next local run
+   or Streamlit Cloud page load will self-heal and re-sync the gist.
+3. If you want the gist fixed immediately without waiting for a run (e.g. to
+   unblock Streamlit Cloud right now), force-push explicitly:
+   ```bash
+   cd /Users/nandakumar/Documents/Nanda_Investment/TradeAgent
+   python3 PortfolioReport/push_tokens_to_gist.py
+   ```
+4. Confirm: re-run the `curl` check above and confirm `updated_at` is now recent.
 
 **Permanent fix (future):** Store live token in GCP Secret Manager or Firestore so
-both local and cloud always read/write from the same place.
+there's a single source of truth instead of a three-way gist/local/secrets race.
 
 ---
 
@@ -283,6 +323,7 @@ Main summary table uses `st.dataframe` with `on_select="rerun"` for row selectio
 | 10 | ℹ️ Non-critical | Activities endpoint `startTime` error — not used |
 | 11 | ✅ Fixed | Nandu's account live |
 | 12 | ⚠️ Known | Main summary table Reason column can't wrap (st.dataframe iframe limitation) — shown as callout box below instead |
+| 13 | ✅ Fixed (2026-08-23) | Both accounts `Authentication failed: Bad Request` simultaneously — dead gist silently discarding every fresh token pasted elsewhere. `QuestradeAPI` now self-heals (falls back to local file if gist auth fails); see "Questrade Token Rotation" above |
 
 ---
 
@@ -342,6 +383,6 @@ O'Neil's exact confirmed-uptrend definition:
 ## Next Steps
 
 - [ ] **Tier 2 CAN SLIM** — institutional ownership (I), FTD detection (M), industry group rank (L)
-- [ ] **Automate generate_report.py weekly via GitHub Actions** — Gist sync already handles token rotation; just needs `GITHUB_GIST_TOKEN` added to GitHub Actions secrets, then add a workflow that runs the report, extracts portfolio tickers into `scripts/portfolio_tickers.json`, and commits
+- [ ] **Automate generate_report.py weekly via GitHub Actions** — Gist sync handles token rotation in normal operation (see caveat in "Questrade Token Rotation" — a dead gist can't self-heal); needs `GITHUB_GIST_TOKEN` added to GitHub Actions secrets, then add a workflow that runs the report, extracts portfolio tickers into `scripts/portfolio_tickers.json`, and commits
 - [ ] **Token rotation permanent fix** — GCP Secret Manager or Firestore (Gist sync already working; this is a longer-term upgrade)
 - [ ] **Auto-sync** — pre-commit hook or symlink so local edits don't need manual copy to TradeAgent
