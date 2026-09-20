@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-13T07:51:54.270848+00:00",
+  "updated": "2026-09-20T08:09:13.831134+00:00",
   "data": {
     "COHU": {
       "c_eps_growth": 100.0,
@@ -39,19 +39,19 @@
         }
       ],
       "n_headlines": [
+        "Cohu (COHU) Draws Valuation Debate As AI Driven Software Narrative Faces A Pullback",
+        "Cohu (COHU) Stock Looks Fairly Valued As Its 133% Run Cools",
+        "Teradyne Looks Expensive Until You Price The AI Chips It Has Not Tested Yet",
+        "Is Teradyne Stock Asking Too Much Of Its Test Business?",
         "Teradyne Rides on Strong UltraFLEXplus Demand: Can It Beat KLAC & COHU?",
-        "AMKR Stock Falls 10% in a Month: Why the Dip is a Buying Opportunity",
-        "AEHR vs. COHU: Which Semiconductor Equipment Stock Is The Better Buy?",
-        "Aehr Test Systems Sinks 10%, Teradyne Falls 5%, FormFactor Drops 6%: What\u2019s Hitting These Semiconductor Test Equipment Stocks?",
-        "Aehr Test Systems Soars Again Friday. Shares Now Up More than 500% On the Year.",
-        "Teradyne Drives Robotics With AI: Can It Outpace KLAC and COHU?"
+        "AMKR Stock Falls 10% in a Month: Why the Dip is a Buying Opportunity"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:51:55.731223+00:00"
+      "fetched_at": "2026-09-20T08:09:15.716711+00:00"
     },
     "ONTO": {
       "c_eps_growth": 76.8,
@@ -91,19 +91,19 @@
         }
       ],
       "n_headlines": [
+        "Onto Innovation (ONTO) Is Considered a Good Investment by Brokers: Is That True?",
+        "Why Onto Innovation (ONTO) Dipped More Than Broader Market Today",
         "Onto Innovation (ONTO) Bets $720M on X-Ray Chip Technology",
         "3 Momentum Anomaly Stocks to Profit in Highly Volatile Markets",
         "Onto Innovation (ONTO) Unveiled Dragonfly G5 At SEMICON Taiwan 2026",
-        "Is Onto Innovation (ONTO) Cheap Following Its Insider Sale And Recent Pullback?",
-        "Onto Innovation (ONTO) Stock May Look Reasonable On Cash Flow After A 223% Run",
-        "Onto Innovation Director Lynch Sells 1,000 Shares for $302,300"
+        "Is Onto Innovation (ONTO) Cheap Following Its Insider Sale And Recent Pullback?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:51:56.362012+00:00"
+      "fetched_at": "2026-09-20T08:09:16.222370+00:00"
     },
     "AMAT": {
       "c_eps_growth": 43.5,
@@ -143,19 +143,19 @@
         }
       ],
       "n_headlines": [
-        "Jim Cramer Calls Applied Materials (AMAT) a Long-Term Buy",
-        "Applied Materials vs. Micron Technology: Which Technology Stock Is a Better Buy in 2026?",
-        "Astera Labs vs. Applied Materials: Which Technology Stock Is a Better Buy in 2026?",
-        "Semiconductor Manufacturing Stocks Q2 Results: Benchmarking Applied Materials (NASDAQ:AMAT)",
-        "Is Trending Stock Applied Materials, Inc. (AMAT) a Buy Now?",
-        "Applied Materials vs. Intel: Which Tech Stock Is a Better Buy in 2026?"
+        "Applied Materials vs. Nvidia: Which Tech Stock Is a Better Buy in 2026?",
+        "Applied Materials vs. Broadcom: Comparing Sales Growth Trajectories for These Artificial Intelligence Companies",
+        "Applied Materials vs. Intel: Examining Revenue Growth Trajectories of These Artificial Intelligence Companies",
+        "Chip Stocks Break Through Ceiling As Sector Rebounds. Macom Is A Standout.",
+        "KLAC Gains From AI Infrastructure: Can It Outpace AMAT & ASML?",
+        "Lam Research Climbs 5% as Chip Equipment Names Outrun the Sector; Applied Materials Rises 4%, KLA Corp. Gains 3%"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:51:57.078165+00:00"
+      "fetched_at": "2026-09-20T08:09:16.677596+00:00"
     },
     "ICHR": {
       "c_eps_growth": 110.7,
@@ -207,11 +207,11 @@
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:51:57.701769+00:00"
+      "fetched_at": "2026-09-20T08:09:17.194415+00:00"
     },
     "FORM": {
       "c_eps_growth": 500.0,
-      "c_rev_growth": 31.9,
+      "c_rev_growth": 32.0,
       "c_eps_current": 0.72,
       "c_eps_prior": 0.12,
       "c_quarter": "2026-06",
@@ -247,19 +247,19 @@
         }
       ],
       "n_headlines": [
-        "3 Top-Ranked AI Semiconductor Equipment Stocks Amid Huge Price Upside",
-        "Amkor Expands Advanced Packaging: Can Its $12B Arizona Bet Pay Off?",
-        "FormFactor Director Sells 2,100 Shares",
-        "Intel, Amkor, Nova, Qualcomm, and FormFactor Stocks Trade Up, What You Need To Know",
-        "Can AEHR Turn AI Processor Tests Into Long-Term Revenue Streams?",
-        "FormFactor, Entegris, Penguin Solutions, Teradyne, and Marvell Technology Stocks Trade Up, What You Need To Know"
+        "SentinelOne, Marvell Technology, FormFactor, Teradyne, and Intel Shares Are Soaring, What You Need To Know",
+        "Can LSCC's FPGA Portfolio Expansion With Mach-N2 Drive Growth?",
+        "Teradyne Looks Expensive Until You Price The AI Chips It Has Not Tested Yet",
+        "2 Cash-Producing Stocks with Competitive Advantages and 1 We Turn Down",
+        "Seagate, Skyworks Solutions, Semtech, Nova, and FormFactor Shares Are Falling, What You Need To Know",
+        "Is Teradyne Stock Asking Too Much Of Its Test Business?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:51:58.441515+00:00"
+      "fetched_at": "2026-09-20T08:09:17.784182+00:00"
     },
     "MPWR": {
       "c_eps_growth": 87.8,
@@ -299,19 +299,19 @@
         }
       ],
       "n_headlines": [
-        "Is Ichor Holdings (ICHR) Outperforming Other Computer and Technology Stocks This Year?",
-        "How Is Monolithic Power Systems' Stock Performance Compared to Other Semiconductor Stocks",
-        "Can Monolithic Power's GFS Production Deal Drive Future Growth?",
-        "Monolithic vs. Intel: Which Chip Stock Has a Better Upside?",
-        "Monolithic Power Revenue Jumped 48%. Can AI Power Chips Keep the Momentum Going?",
-        "What Is The Market Really Expecting From MPWR Stock?"
+        "ASML Rides on Strength in Installed Base Business: Will it Sustain?",
+        "GFS Gains From Expanding Partner base: Will it Boost Growth Prospects?",
+        "Applied Materials, Lam Research, Monolithic Power Systems, Marvell Technology, and MACOM Shares Are Falling, What You Need To Know",
+        "What Monolithic Power Systems (MPWR)'s Foundry Deal and Dividend Move Mean For Shareholders",
+        "Missed Out on the AI Revolution? Here\u2019s 1 More Stock to Buy",
+        "Is Ichor Holdings (ICHR) Outperforming Other Computer and Technology Stocks This Year?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:51:59.101746+00:00"
+      "fetched_at": "2026-09-20T08:09:18.358595+00:00"
     },
     "FCFS": {
       "c_eps_growth": 59.2,
@@ -351,19 +351,19 @@
         }
       ],
       "n_headlines": [
+        "FirstCash Holdings (FCFS) Stock Looks Priced At A Premium After Its 165% Run",
+        "Unpacking Q2 Earnings: FirstCash (NASDAQ:FCFS) In The Context Of Other Personal Loan Stocks",
         "1 Surging  Stock to Consider Right Now and 2 That Underwhelm",
         "FirstCash (FCFS) Upgraded to Buy: Here's Why",
         "Beat the Market Like Zacks: Amgen, FirstCash, Delek in Focus",
-        "Our FirstCash Holdings Stock Pick is up 61%. We Still Like the Growth Story.",
-        "2 Growth Stocks Set to Flourishand 1 We Brush Off",
-        "FirstCash\u2019s (NASDAQ:FCFS) Q2 CY2026: Beats On Revenue"
+        "Our FirstCash Holdings Stock Pick is up 61%. We Still Like the Growth Story."
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:51:59.748501+00:00"
+      "fetched_at": "2026-09-20T08:09:18.900445+00:00"
     },
     "AEIS": {
       "c_eps_growth": 168.2,
@@ -403,19 +403,19 @@
         }
       ],
       "n_headlines": [
+        "Advanced Energy (AEIS): Buy, Sell, or Hold Post Q2 Earnings?",
+        "Is Advanced Energy Industries (AEIS) Stock Outpacing Its Computer and Technology Peers This Year?",
         "Advanced Energy Industries General Counsel Sells 632 Shares for $182,100",
         "ASML Bets Big on AI & Capacity Expansion: Should You Buy the Stock?",
         "Advanced Energy (AEIS) Down 21.8% Since Last Earnings Report: Can It Rebound?",
-        "Electronic Components Stocks Q2 Results: Benchmarking Advanced Energy (NASDAQ:AEIS)",
-        "Advanced Energy and Fluence Energy have been highlighted as Zacks Bull and Bear of the Day",
-        "Bull of the Day: Advanced Energy Industries, Inc. (AEIS)"
+        "Electronic Components Stocks Q2 Results: Benchmarking Advanced Energy (NASDAQ:AEIS)"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:00.285901+00:00"
+      "fetched_at": "2026-09-20T08:09:19.463093+00:00"
     },
     "BE": {
       "c_eps_growth": 477.8,
@@ -455,19 +455,19 @@
         }
       ],
       "n_headlines": [
-        "Louis Navellier is buying 3 headline-making stocks, including Google",
-        "Cramer Asked Who Was Buying Gigantic Bloom Energy Calls. A Pelosi Filing Named Two of the Same Stocks Weeks Earlier.",
-        "Dear Bloom Energy Stock Fans, Mark Your Calendars for September 21",
-        "Former OpenAI Researcher Bets on AI Stocks After $35 Billion Wipeout",
-        "Do You Have the Guts to Buy the AI Stocks Right Now?",
-        "Stock Of The Day: AI Energy Play Bloom Energy Nears Buy Point, S&P 500 Entry"
+        "Plug Power vs. Bloom Energy: Which Hydrogen-Adjacent Stock Actually Has a Real Business Model?",
+        "Bloom Energy Is Riding the Data Center Boom to a $25 Billion Backlog. Plug Power Is Passing on It. Here's Why.",
+        "Are Oils-Energy Stocks Lagging  Bloom Energy (BE) This Year?",
+        "One stock is up 540%, and it's not alone",
+        "The Anthropic IPO Could Be Bigger Than SpaceX. Here's What That Means for Vistra, Bloom Energy, and Oklo.",
+        "These 5 Green Stocks Have Crushed Clean Energy ETFs, S&P 500 And AI Funds In 2026"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:00.915008+00:00"
+      "fetched_at": "2026-09-20T08:09:19.996644+00:00"
     },
     "DOCN": {
       "c_eps_growth": -17.1,
@@ -507,19 +507,19 @@
         }
       ],
       "n_headlines": [
+        "ZoomInfo, monday.com, Asure Software, DigitalOcean, and Amplitude Shares Are Falling, What You Need To Know",
+        "DigitalOcean\u2019s (DOCN) $725M Bet On AI\u2019s Next Wave",
+        "DigitalOcean (DOCN) Stock Is Up, What You Need To Know",
         "Stocks making big moves this week: Solaris Energy Infrastructure, Revolve, AeroVironment, DigitalOcean, and SoFi",
         "3 Cash-Producing Stocks Worth Investigating",
-        "Why Is DigitalOcean (DOCN) Stock Soaring Today",
-        "DigitalOcean\u2019s (DOCN) AI Bet Is Finally Paying Off In Numbers",
-        "DigitalOcean's CFO Sells Over 35,000 Shares for $3.8 Million After a 241% One-Year Return",
-        "DigitalOcean CEO Padmanabhan Srinivasan Sells 20,483 Shares for $2.2 Million"
+        "Why Is DigitalOcean (DOCN) Stock Soaring Today"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:01.600444+00:00"
+      "fetched_at": "2026-09-20T08:09:20.546490+00:00"
     },
     "FN": {
       "c_eps_growth": 59.4,
@@ -559,19 +559,19 @@
         }
       ],
       "n_headlines": [
+        "Fabrinet's 2026 Outlook: Capital Expansion Powers Surging AI Hardware Demand",
+        "Coherent's Datacenter Business Powers its Revenue Growth",
+        "Fabrinet (FN) Down 22.3% Since Last Earnings Report: Can It Rebound?",
+        "Corning Tumbles 12% on $2B At-the-Market Equity Offering; Coherent Sinks 11%, Lumentum Drops 9%, Fabrinet Slides 6%",
         "How Far Can Fabrinet Stock Fall While Its Business Accelerates?",
-        "FN's AI Optical Growth Accelerates: Can It Challenge LITE & AAOI?",
-        "Is COHR Stock a Buy as AI Growth Meets Premium Valuation and Risk?",
-        "Coherent Fell Hard Over 3 Months: It Will Nearly Double According to These Analysts",
-        "NVT Trades at Premium Valuation: Buy, Sell or Hold the Stock?",
-        "Can Coherent's 79% Datacenter Mix Sustain Its Growth Momentum?"
+        "FN's AI Optical Growth Accelerates: Can It Challenge LITE & AAOI?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:02.148381+00:00"
+      "fetched_at": "2026-09-20T08:09:21.101190+00:00"
     },
     "TTMI": {
       "c_eps_growth": 95.1,
@@ -611,19 +611,19 @@
         }
       ],
       "n_headlines": [
+        "1 Mid-Cap Stock on Our Buy List and 2 We Avoid",
+        "3 Reasons We\u2019re Fans of TTM Technologies (TTMI)",
+        "TTM Technologies' N+M Technology Ramps Up: Can Revenue Soar?",
+        "Is it the Right Time to Buy TTMI Stock at a P/S Multiple of 2.59X?",
         "TTM Technologies (TTMI) Earnings Beat Keeps Its Valuation Narrative In Focus",
-        "TTM Technologies (TTMI) Stock Looks Pricey On Cash Flow But Fair On Earnings",
-        "Why Is TTM (TTMI) Down 15.4% Since Last Earnings Report?",
-        "3 Growth Stocks to Add to Your Roster",
-        "TTMI's Europe Expansion Adds Capabilities: Can It Drive Growth?",
-        "Wall Street Analysts Think TTM (TTMI) Could Surge 77.83%: Read This Before Placing a Bet"
+        "TTM Technologies (TTMI) Stock Looks Pricey On Cash Flow But Fair On Earnings"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:02.771537+00:00"
+      "fetched_at": "2026-09-20T08:09:21.663284+00:00"
     },
     "BW": {
       "c_eps_growth": 111.1,
@@ -675,7 +675,7 @@
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:03.420292+00:00"
+      "fetched_at": "2026-09-20T08:09:22.160160+00:00"
     },
     "AXTI": {
       "c_eps_growth": 212.5,
@@ -715,19 +715,19 @@
         }
       ],
       "n_headlines": [
-        "The Thing to Watch With AXTQ Is Not AXT. It Is How Long You Hold It",
-        "AXT Stock Falls 22% in Three Months: 3 Reasons the Dip Looks Attractive",
-        "AXT's Liquidity Supports InP Capacity Expansion: Can Growth Continue?",
-        "Tradr\u2019s New AXTQ Pays Double When AXT Falls. The Catch Is the Word Daily",
-        "AXT's Supply Agreements Expand: Can They Strengthen Revenue Growth?",
-        "Here's Why AXT (AXTI) Is a Great 'Buy the Bottom' Stock Now"
+        "Bull of the Day: AXT (AXTI)",
+        "AXT (AXTI) Jumped, So What Is Driving Attention Now?",
+        "AXTI Stock Jumped 11% Yesterday. The Index Nod Wasn\u2019t the Whole Story.",
+        "AXT (AXTI) Stock Could Be Fully Priced Despite Its Huge 3 Year Run",
+        "AXT Inc. (AXTI) Draws Bullish Analyst Attention \u2014 Here\u2019s Why",
+        "AXT Rises 10% After Being Named Co-Packaged Optics Winner"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:04.061386+00:00"
+      "fetched_at": "2026-09-20T08:09:22.659271+00:00"
     },
     "TER": {
       "c_eps_growth": 387.8,
@@ -767,19 +767,19 @@
         }
       ],
       "n_headlines": [
-        "1 Cash-Heavy Stock on Our Watchlist and 2 We Ignore",
-        "Teradyne (TER) Suffers a Larger Drop Than the General Market: Key Insights",
-        "3 Profitable Stocks with Warning Signs",
-        "Top Wide-Moat Stocks to Buy for Long-Term Wealth and Stability",
-        "Teradyne Rides on Strong UltraFLEXplus Demand: Can It Beat KLAC & COHU?",
-        "Can AEHR Turn AI Processor Tests Into Long-Term Revenue Streams?"
+        "Teradyne (TER) Opens Bengaluru Office To Support India Chip Manufacturing",
+        "SentinelOne, Marvell Technology, FormFactor, Teradyne, and Intel Shares Are Soaring, What You Need To Know",
+        "Teradyne (TER) Advances While Market Declines: Some Information for Investors",
+        "ASX vs. TER: Which AI Semiconductor Stock Should You Buy Right Now?",
+        "How Is Teradyne Stock Performance Compared to Other Semiconductor Stocks",
+        "Teradyne Looks Expensive Until You Price The AI Chips It Has Not Tested Yet"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:04.617022+00:00"
+      "fetched_at": "2026-09-20T08:09:23.230118+00:00"
     },
     "AAOI": {
       "c_eps_growth": -75.0,
@@ -819,19 +819,19 @@
         }
       ],
       "n_headlines": [
+        "Everyone\u2019s Watching Applied Optoelectronic\u2019s Revenue. Few Are Watching This Chart",
+        "Applied Optoelectronics (AAOI) Pulled Back Sharply, Is It Still Above Fair Value?",
+        "CIEN Targets 30% Revenue Growth Through 2029 \u2014 Peers COHR, GLW And AAOI Rally After Guidance",
+        "Optics Stocks Rally as Oversold Bounce Takes Hold: Coherent Jumps 6%, Lumentum Climbs 5%, Applied Optoelectronics Advances 3%",
         "LITE's Laser Growth Accelerates: Can It Challenge AVGO & AAOI?",
-        "Volatility Insurance for Applied Optoelectronics (AAOI) Stock Potentially Inspires a Contrarian Outlook",
-        "Which Optics Stock Has Dominated in 2026: Applied Optoelectronics, Lumentum, or Coherent?",
-        "These 3 AI Stocks Are Way Off Their Highs. Is the Pullback a Buying Opportunity?",
-        "HPE Cannot Build AI Servers Fast Enough. Is the Stock Still Cheap?",
-        "This Little-Known AI Company Is Quietly Building for the Data Center Boom"
+        "Volatility Insurance for Applied Optoelectronics (AAOI) Stock Potentially Inspires a Contrarian Outlook"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:05.236389+00:00"
+      "fetched_at": "2026-09-20T08:09:23.752722+00:00"
     },
     "GLW": {
       "c_eps_growth": 18.2,
@@ -871,19 +871,19 @@
         }
       ],
       "n_headlines": [
-        "Jim Cramer Might Come Back To This AI Stock Later",
-        "Corning Sees $20B Run Rate Early as Verizon Deal Fuels Data-Center Growth",
-        "1 S&P 500 Stock with Impressive Fundamentals and 2 We Ignore",
-        "Corning stock dips on filing for $2 billion equity distribution program",
-        "Oracle, Kroger, Adobe, and More Stocks That Explain Today\u2019s Market",
-        "Can Ciena Sustain Its Strong Growth Amid Rising Optical Demand?"
+        "Here\u2019s A Stock That Jim Cramer Like Before But Now He Just Doesn\u2019t Want To Buy It",
+        "Netflix, Nucor, On Holding, Xenon, Accenture, Coinbase, and More Stocks That Explain Today\u2019s Market",
+        "Bet on These Photonics ETFs to Exploit the Next Wave of AI Revolution",
+        "Corning Stock: The $2 Billion Dilution Scare Is Fading. Here\u2019s What Matters Now.",
+        "Jim Cramer Says to Wait For Corning (GLW) to Fall Further",
+        "Lumentum Climbs 3% as Optics Buying Extends; Coherent Rises 5%, Corning Jumps 3%"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:05.795698+00:00"
+      "fetched_at": "2026-09-20T08:09:24.317788+00:00"
     },
     "NXT": {
       "c_eps_growth": 3.8,
@@ -923,19 +923,19 @@
         }
       ],
       "n_headlines": [
+        "3 Stocks Linked To California Wealth Tax Spending Investors Should Watch",
+        "Nextpower (NXT): Buy, Sell, or Hold Post Q2 Earnings?",
+        "Nextpower (NXT) Dips More Than Broader Market: What You Should Know",
         "Nextpower (NXT) Falls More Steeply Than Broader Market: What Investors Need to Know",
         "Investors Heavily Search Nextpower Inc. (NXT): Here is What You Need to Know",
-        "Nextpower (NXT) Outpaces Stock Market Gains: What You Should Know",
-        "Frontier Energy locks in major Waroona Stage One contracts ahead of September construction",
-        "Nextpower (NXT) Registers a Bigger Fall Than the Market: Important Facts to Note",
-        "Nextpower (NXT) Is Down 5.3% After Cutting EBITDA Guidance Despite Q2 Revenue Growth"
+        "Nextpower (NXT) Outpaces Stock Market Gains: What You Should Know"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:06.436622+00:00"
+      "fetched_at": "2026-09-20T08:09:24.887083+00:00"
     },
     "LPTH": {
       "c_eps_growth": 62.5,
@@ -975,28 +975,28 @@
         }
       ],
       "n_headlines": [
+        "LightPath\u2019s Defense Pivot Could Send Shares Higher",
+        "LightPath\u2019s (LPTH) Defense Pivot Just Showed Up In The Numbers",
         "LightPath (LPTH) Q4 2026 Earnings Call Transcript",
         "LightPath Technologies, Inc. Q4 2026 Earnings Call Summary",
         "LightPath Technologies Inc (LPTH) (Q4 2026) Earnings Call Highlights: Record Revenue, 197% ...",
-        "LightPath Technologies Q4 Earnings Call Highlights",
-        "LightPath Technologies, Inc. (LPTH) Reports Q4 Loss, Beats Revenue Estimates",
-        "Is LightPath\u00a0(LPTH) a Hidden Winner in Missile\u00a0Defense\u00a0and Space?"
+        "LightPath Technologies Q4 Earnings Call Highlights"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:07.018154+00:00"
+      "fetched_at": "2026-09-20T08:09:25.511321+00:00"
     },
     "MOD": {
-      "c_eps_growth": 42.6,
+      "c_eps_growth": 43.5,
       "c_rev_growth": 28.0,
       "c_eps_current": 1.39,
-      "c_eps_prior": 0.98,
+      "c_eps_prior": 0.97,
       "c_quarter": "2026-06",
       "c_qtr_growths": [
-        42.6
+        43.5
       ],
       "c_qtr_labels": [
         "2026-06"
@@ -1006,7 +1006,7 @@
       ],
       "c_accelerating": false,
       "c_accel_full": false,
-      "a_eps_growth_3yr": -5.6,
+      "a_eps_growth_3yr": -5.2,
       "a_roe": null,
       "a_eps_years": [
         {
@@ -1015,7 +1015,7 @@
         },
         {
           "year": "2025",
-          "eps": 3.42
+          "eps": 3.5
         },
         {
           "year": "2024",
@@ -1023,23 +1023,23 @@
         },
         {
           "year": "2023",
-          "eps": 2.94
+          "eps": 2.93
         }
       ],
       "n_headlines": [
+        "3 US Stocks That Could Gain If Buyers Shift Away From India",
+        "Modine Manufacturing Company (MOD) is Attracting Investor Attention: Here is What You Should Know",
         "Modine (MOD) Sees a More Significant Dip Than Broader Market: Some Facts to Know",
-        "Wall Street Analysts Think Modine (MOD) Is a Good Investment: Is It?",
-        "Modine Manufacturing (MOD) Beats On Data Center Growth, Is It Still 45% Undervalued?",
-        "Modine (MOD) Stock Could Be Reasonable On Cash Flow Strength",
-        "Why Is Modine (MOD) Down 3.9% Since Last Earnings Report?",
-        "Modine surges as Hunterbrook report ties $4 billion deal to Google"
+        "Wall Street Is Obsessed With the Anthropic IPO. Here's the AI Cooling Stock Nobody Is Talking About.",
+        "Gentherm (THRM) Shareholders Approve Modine Merger, Clear for October Close",
+        "Wall Street Analysts Think Modine (MOD) Is a Good Investment: Is It?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:07.630788+00:00"
+      "fetched_at": "2026-09-20T08:09:26.118946+00:00"
     },
     "LXU": {
       "c_eps_growth": -325.0,
@@ -1091,7 +1091,7 @@
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:08.239785+00:00"
+      "fetched_at": "2026-09-20T08:09:26.678567+00:00"
     },
     "AIP": {
       "c_eps_growth": -36.4,
@@ -1131,19 +1131,19 @@
         }
       ],
       "n_headlines": [
-        "Would You Be Glad To Own Synopsys At A Discount While AI Tests Its Software?",
-        "Synopsys Stock Is Down, But Is Its Future Worth Buying Into?",
-        "Synopsys' Core Engine Grew Far Slower Than Its Revenue",
-        "Synopsys Stock's Upside Now Rests On How It Gets Paid",
-        "History Has An Opinion On This SNPS Price Level",
-        "The Options Market Gives Synopsys Room To Fall Two-Fifths Or Rise Two-Thirds"
+        "Why Has Synopsys Stopped Leading With Bad News?",
+        "Should You Buy Synopsys Stock While Its Cash Runs Far Ahead Of Its Profit?",
+        "Is Arteris (AIP) Getting Too Pricey For Its Sales?",
+        "Is Arteris (AIP) Using FlexGen Multi-Die to Quietly Reshape Its AI Chiplet Investment Story?",
+        "EverCommerce (EVCM) Surges 19.8%: Is This an Indication of Further Gains?",
+        "What Kind Of Swing Are You Signing Up For With Synopsys Stock?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:08.871987+00:00"
+      "fetched_at": "2026-09-20T08:09:27.258984+00:00"
     },
     "RCAT": {
       "c_eps_growth": -73.3,
@@ -1183,19 +1183,19 @@
         }
       ],
       "n_headlines": [
-        "Ondas Raises 2026 Revenue View: Can It Deliver the Required H2 Ramp?",
-        "Red Cat Holdings Director Sells 65,000 Shares for $552,500",
-        "Unusual Machines Just Doubled in a Month: Take Profits, or Buy More?",
-        "ONDS Raises 2026 Revenue Outlook as Backlog Surges Higher",
-        "ONDS Down 18.2% in the Past Month: Does the Pullback Create Value?",
-        "Is ONDS Worth Buying as Hypergrowth Collides With M&A Execution Risk?"
+        "Red Cat and Unusual Machines Fall 3% as Drone Selloff Extends; Ondas Slips",
+        "Red Cat Holdings (RCAT) Is Down 12.7% After Mixed Results On Ambitious AI-Defense Ramp-Up Plans",
+        "Is AeroVironment Becoming a Broader Defense Technology Platform?",
+        "Red Cat Holdings (RCAT) Faces A 65% Undervalued View, Is That Upside Still Real?",
+        "Red Cat Sinks 6% as Speculative Drone Names Extend Month-Long Slide; Unusual Machines Drops 4%, AeroVironment Barely Budges",
+        "Swarmer Targets $200M in Pro Forma Revenue Next Year \u2013 Report"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:09.486708+00:00"
+      "fetched_at": "2026-09-20T08:09:27.847330+00:00"
     },
     "ASX": {
       "c_eps_growth": 175.9,
@@ -1235,19 +1235,19 @@
         }
       ],
       "n_headlines": [
-        "Asian Equities Traded in the US as American Depositary Receipts Rise in Friday Trading",
-        "Can Strong LEAP Momentum Boost ASE Technology's Long-Term Growth?",
-        "Asian Equities Traded in the US as American Depositary Receipts Track Lower in Wednesday Trading",
-        "ASE Technology Surges 16% in 3 Months: Time to Hold or Fold the Stock?",
-        "Update: US Equity Futures Fall Pre-Bell as Brent Crude Surpasses $100 per Barrel",
-        "Asian Equities Traded in the US as American Depositary Receipts Decline in Tuesday Trading"
+        "UMC Up 250% in the Past Year: Should Investors Bet on the Stock Now?",
+        "ASX Up 230.9% in the Past Year: Should You Capitalize on the Euphoria?",
+        "Are Computer and Technology Stocks Lagging  Hewlett Packard (HPE) This Year?",
+        "Asian Equities Traded in the US as American Depositary Receipts Edge Up in Wednesday Trading",
+        "ASX vs. TER: Which AI Semiconductor Stock Should You Buy Right Now?",
+        "Asian Equities Traded in the US as American Depositary Receipts Fall in Tuesday Trading"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:10.174634+00:00"
+      "fetched_at": "2026-09-20T08:09:28.468005+00:00"
     },
     "AMPX": {
       "c_eps_growth": 50.0,
@@ -1299,7 +1299,7 @@
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:10.768363+00:00"
+      "fetched_at": "2026-09-20T08:09:28.992681+00:00"
     },
     "LSCC": {
       "c_eps_growth": 600.0,
@@ -1339,28 +1339,28 @@
         }
       ],
       "n_headlines": [
-        "1 Semiconductor Stock to Own for Decades and 2 Facing Challenges",
-        "Why Is Lattice (LSCC) Down 11.3% Since Last Earnings Report?",
-        "Lattice Semiconductor SVP Elashmawi Sells 16,773 Shares for $2.3 Million",
-        "Forget the Biggest Chip Stocks \u2014 Analysts Say Buy These 2 Names",
-        "Lattice Semiconductor Sees AMI Combination Powering $3B AI Data Center Ambition",
-        "MCHP's Portfolio Expansion Boosts Growth Prospects Against AMD & LSCC"
+        "Lattice Semiconductor SVP Desale Sells 4,279 Shares for $452,000",
+        "Lattice Semiconductor (LSCC) Debuts Mach-N2 FPGA Family to Secure Next-Gen Infrastructure",
+        "Is Lattice\u2019s Mach-N2 Secure FPGA Launch And AI Toolset Altering The Investment Case For LSCC?",
+        "Micron, Qualcomm, Nova, Lattice Semiconductor, and Workday Shares Are Soaring, What You Need To Know",
+        "Can LSCC's FPGA Portfolio Expansion With Mach-N2 Drive Growth?",
+        "AMKR or LSCC: Which Is the Better Value Stock Right Now?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:11.398864+00:00"
+      "fetched_at": "2026-09-20T08:09:29.533403+00:00"
     },
     "ALM": {
-      "c_eps_growth": 592.3,
+      "c_eps_growth": 428.2,
       "c_rev_growth": 497.7,
       "c_eps_current": 0.64,
-      "c_eps_prior": -0.13,
+      "c_eps_prior": -0.2,
       "c_quarter": "2026-06",
       "c_qtr_growths": [
-        592.3
+        428.2
       ],
       "c_qtr_labels": [
         "2026-06"
@@ -1391,19 +1391,19 @@
         }
       ],
       "n_headlines": [
+        "Almonty and Sandvik\u2019s WBH sign Spanish tungsten supply deal",
+        "Almonty enters into tungsten partnership with Rwanda Government",
+        "ALM- A Tungsten Mining Stock to Target",
         "Jefferies sees bottlenecks in critical minerals as electrification demand builds",
         "Almonty (ALM) Authorized a $300M Buyback Before Sangdong Fully Ramps. Is that the Best Use of Capital?",
-        "Tungsten Stocks Are Hot (Again)",
-        "Almonty Industries (NasdaqCM:ALM) Stock Looks Fully Priced Right Now",
-        "Almonty Industries (ALM) Could Be 59% Below Fair Value On Buyback News",
-        "Shortage Of Tungsten, Key For AI, Defense, Is Fueling This Stock"
+        "Tungsten Stocks Are Hot (Again)"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:11.976532+00:00"
+      "fetched_at": "2026-09-20T08:09:30.046192+00:00"
     },
     "TGB": {
       "c_eps_growth": 166.7,
@@ -1455,7 +1455,7 @@
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:12.675961+00:00"
+      "fetched_at": "2026-09-20T08:09:30.672989+00:00"
     },
     "ENS": {
       "c_eps_growth": 115.5,
@@ -1495,19 +1495,19 @@
         }
       ],
       "n_headlines": [
-        "EnerSys (ENS) Down 9.3% Since Last Earnings Report: Can It Rebound?",
-        "3 Dividend Growth Stocks to Buy as Fed Expected to Keep Rates Higher",
-        "Here's Why Investors Should Retain Powell Industries Stock in Portfolio Now",
-        "Reasons Why Zebra Technologies Stock Should Be in Your Portfolio",
-        "ENS vs. ABBNY: Which Stock Is the Better Value Option?",
-        "Is Keyence (KYCCF) Outperforming Other Industrial Products Stocks This Year?"
+        "Is EnerSys (ENS) Undervalued After Lower P E and Strong Cash Flow Drew Value Buyers?",
+        "ENS or ABBNY: Which Is the Better Value Stock Right Now?",
+        "Is Enersys (ENS) Outperforming Other Industrial Products Stocks This Year?",
+        "Are Investors Undervaluing Enersys (ENS) Right Now?",
+        "1 Industrials Stock to Consider Right Now and 2 We Question",
+        "5 Low P/B Stocks That Offer Attractive Value and Growth"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:13.409376+00:00"
+      "fetched_at": "2026-09-20T08:09:31.228462+00:00"
     },
     "CRDO": {
       "c_eps_growth": 233.3,
@@ -1547,19 +1547,19 @@
         }
       ],
       "n_headlines": [
-        "Arm vs. Credo Technology Group: Which Semiconductor Stock Is a Better Buy in 2026?",
-        "Credo Technology Co-Founder and CTO Sells Nearly 4,000 Shares Worth Over $600,000 Amid a 27% One-Year Return",
-        "Credo (CRDO) Reports 115% Revenue Growth but Lower GAAP Gross Margin. Can AI Connectivity Scale Without Further Margin Compression?",
-        "What Investors Need To Understand About Broadcom, Credo and Snowflake Earnings",
-        "Credo (CRDO) Has Nearly 38% Upside to Rosenblatt\u2019s Target\u2014What\u2019s Holding It Back?",
-        "The Credo Selloff Could Be a Huge Buying Opportunity: Analysts Still See $300+."
+        "Credo vs. NVIDIA After Earnings: Which AI Stock Should You Buy Now?",
+        "Credo Technology Group vs. Sandisk: Which Technology Stock Is a Better Buy in 2026?",
+        "Credo (CRDO) Stock May Stay Reasonable On Fresh AI Optics News",
+        "Credo Targets Growing AI Bandwidth Demands With 1.6T Optical Solutions \u2014 To Showcase New Modules At ECOC 2026",
+        "If AI Spending Keeps Exploding, Credo Stock Could Look Very Different by 2030",
+        "What's Going On With Credo Technology Stock on Thursday?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:13.944250+00:00"
+      "fetched_at": "2026-09-20T08:09:31.847628+00:00"
     },
     "SITM": {
       "c_eps_growth": 182.1,
@@ -1599,19 +1599,19 @@
         }
       ],
       "n_headlines": [
+        "Lyft downgraded, Trip.com upgraded: Wall Street's top analyst calls",
         "Benchmark Assigns Buy Rating to SiTime (SITM) Amid Timing Technology Market Expansion",
         "How SiTime\u2019s (SITM) Silicon Timing Devices Power AI Data Centers",
         "Why Is SiTime (SITM) Down 16.4% Since Last Earnings Report?",
         "The Zacks Analyst Blog Highlights NVIDIA, Super Micro Computer, Semtech, SiTime and Keysight Technologies",
-        "Buy 5 AI-Powered Momentum Stocks for September After a Strong August",
-        "These 3 AI stocks are bought by both hedge funds and mutual funds"
+        "Buy 5 AI-Powered Momentum Stocks for September After a Strong August"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:14.707085+00:00"
+      "fetched_at": "2026-09-20T08:09:32.424869+00:00"
     },
     "GEV": {
       "c_eps_growth": 31.7,
@@ -1630,12 +1630,12 @@
       ],
       "c_accelerating": false,
       "c_accel_full": false,
-      "a_eps_growth_3yr": 251.6,
+      "a_eps_growth_3yr": 251.8,
       "a_roe": null,
       "a_eps_years": [
         {
           "year": "2025",
-          "eps": 17.92
+          "eps": 17.96
         },
         {
           "year": "2024",
@@ -1651,19 +1651,19 @@
         }
       ],
       "n_headlines": [
-        "Jim Cramer Discussed Taking The Long View For Chevron Corporation (NYSE:CVX)",
-        "GE Vernova Stock Isn\u2019t All About Orders",
-        "Elon Musk's gas turbines could shake up the backlogged sector",
-        "EXCLUSIVE: Kevin Warsh\u2019s Hawkishness Is a \u2018Distraction From His Dovishness,\u2019 Truflation CEO Says",
-        "Gas Turbine And Grid Backlog Powers GE Vernova (GEV)",
-        "GE Vernova (GEV) Suffers a Larger Drop Than the General Market: Key Insights"
+        "Jim Cramer Revealed GE Vernova Inc. (NYSE:GEV)\u2019s Saying There\u2019s An Order Acceleration",
+        "GE Vernova (GEV) Surpasses Market Returns: Some Facts Worth Knowing",
+        "GE Vernova vs. NextEra Energy: Which Industrials Stock Is a Better Buy in 2026?",
+        "Bernstein\u2019s Defense of GE Vernova Doesn\u2019t Answer the Valuation Question",
+        "U.S. AI-Related Stocks Extend Rally Premarket",
+        "GE Vernova Eyes $200B Backlog Early in 2027 as Power Demand Surges"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:15.222743+00:00"
+      "fetched_at": "2026-09-20T08:09:32.896692+00:00"
     },
     "SIMO": {
       "c_eps_growth": 616.1,
@@ -1703,19 +1703,19 @@
         }
       ],
       "n_headlines": [
-        "Asian Equities Traded in the US as American Depositary Receipts Fall in Thursday Trading",
+        "Is Silicon Motion Technology (SIMO) Fully Valued Following Its September Conference Run?",
+        "Asian Equities Traded in the US as American Depositary Receipts Surge in Thursday Trading",
+        "Here is What to Know Beyond Why Silicon Motion Technology Corporation (SIMO) is a Trending Stock",
         "Why the Market Dipped But Silicon Motion (SIMO) Gained Today",
-        "Asian Equities Traded in the US as American Depositary Receipts Track Lower in Wednesday Trading",
-        "Sanmina vs. Silicon Motion: Which AI Stock Has More Upside Now?",
-        "The AI Memory Stock That Could Outshine the Obvious Picks",
-        "ASML Bets Big on AI & Capacity Expansion: Should You Buy the Stock?"
+        "Asian Equities Traded in the US as American Depositary Receipts Fall in Tuesday Trading",
+        "Asian Equities Traded in the US as American Depositary Receipts Fall Sharply in Monday Trading"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:15.745142+00:00"
+      "fetched_at": "2026-09-20T08:09:33.490256+00:00"
     },
     "QUIK": {
       "c_eps_growth": 70.6,
@@ -1755,19 +1755,19 @@
         }
       ],
       "n_headlines": [
+        "QuickLogic (QUIK) Suffers a Larger Drop Than the General Market: Key Insights",
         "QuickLogic Corporation (QUIK) Is a Trending Stock: Facts to Know Before Betting on It",
         "Brokers Suggest Investing in QuickLogic (QUIK): Read This Before Placing a Bet",
         "QuickLogic (QUIK) Q2 2026 Earnings Call Transcript",
         "Wall Street Bulls Look Optimistic About QuickLogic (QUIK): Should You Buy?",
-        "QuickLogic Targets Defense, Space Growth With Rad-Hard FPGA Push",
-        "GoDaddy\u2019s AI Will Stabilize Growth, Analyst Says. Plus, Lionsgate Studios and 3 More Stocks."
+        "QuickLogic Targets Defense, Space Growth With Rad-Hard FPGA Push"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:16.311219+00:00"
+      "fetched_at": "2026-09-20T08:09:34.139560+00:00"
     },
     "ALGM": {
       "c_eps_growth": 228.6,
@@ -1807,19 +1807,19 @@
         }
       ],
       "n_headlines": [
+        "Vishay Intertechnology, Allegro MicroSystems, Himax, Bandwidth, and AMD Stocks Trade Up, What You Need To Know",
+        "1 of Wall Street\u2019s Favorite Stocks on Our Watchlist and 2 Facing Challenges",
         "Unpacking Q2 Earnings: Allegro MicroSystems (NASDAQ:ALGM) In The Context Of Other Processors and Graphics Chips Stocks",
         "Allegro MicroSystems (ALGM) Could Be 33% Below Fair Value On Its Growth Narrative",
         "1 High-Flying Stock for Long-Term Investors and 2 Facing Headwinds",
-        "2 Growth Stocks with Explosive Upside and 1 We Question",
-        "Strike a Balance Between Growth and Stability With These 3 Names Ready to Rally",
-        "Amkor, FormFactor, Vishay Intertechnology, Allegro MicroSystems, and Intel Shares Skyrocket, What You Need To Know"
+        "2 Growth Stocks with Explosive Upside and 1 We Question"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:16.973578+00:00"
+      "fetched_at": "2026-09-20T08:09:34.731320+00:00"
     },
     "DIOD": {
       "c_eps_growth": 3.0,
@@ -1859,19 +1859,19 @@
         }
       ],
       "n_headlines": [
+        "UMC Up 250% in the Past Year: Should Investors Bet on the Stock Now?",
         "Best Momentum Stocks to Buy for August 13th",
         "New Strong Buy Stocks for August 13th",
         "Diodes (DIOD) Q2 2026 Earnings Call Transcript",
         "Diodes (DIOD) Is Up 27.8% After AI-Auto Strength, Q3 Outlook And Buyback Progress - What's Changed",
-        "Can Diodes (DIOD) Justify Its Valuation As Earnings And Guidance Impress?",
-        "Diodes (DIOD) Stock Looks Fully Priced After A 109% Run"
+        "Can Diodes (DIOD) Justify Its Valuation As Earnings And Guidance Impress?"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:17.537207+00:00"
+      "fetched_at": "2026-09-20T08:09:35.323098+00:00"
     },
     "SPY": {
       "c_eps_growth": null,
@@ -1888,19 +1888,19 @@
       "a_roe": null,
       "a_eps_years": [],
       "n_headlines": [
-        "You Can\u2019t Spell SPY Without AI: How the Stock Market Became a 1-Way Bet on the Future",
-        "Forget the S&P 500: 3 Unloved Parts of the Market Are Winning in 2026 and These Vanguard ETFs Own Them Cheap",
-        "Investing in the Vanguard S&P 500 ETF (VOO)? Beware of This 1 Sneaky Risk.",
-        "S&P 500, Dow Break Past Four-Day Loss To End Higher As Investors Eye Fed Meeting Next Week \u2014 DELL, HPE, EL, WMT In Focus",
-        "SCHD and JEPI Both Pay You to Wait, Yet Only One Raises Its Payout Every Year",
-        "A Peak Back at Future Proof Citywide with Tom Lee"
+        "Is Berkshire Hathaway Stock a Better Buy Than an S&P 500 Index Fund?",
+        "VOO vs. SPY: Is There Actually a Difference?",
+        "SPMO Owns the S&P 500\u2019s 100 Fastest-Rising Stocks. Its Momentum Screen Has Beaten the Index by 67-Points Over the Last Five Years",
+        "Dow Drops To Record Worst Week In Six Months Amid Elevated Yields, Oil \u2014 NVDA, TSLA, SPCX, ONON In Focus",
+        "$1 Million in VOO Pays $871 a Month, and Covering the Gap Means Selling Shares the IRS Taxes",
+        "After Comparing Every Covered Call ETF With Over $1 Billion in Assets, These 3 Pay Up to 8 Percent and Still Grew Your Principal"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:18.100139+00:00"
+      "fetched_at": "2026-09-20T08:09:35.741113+00:00"
     },
     "QQQ": {
       "c_eps_growth": null,
@@ -1917,19 +1917,19 @@
       "a_roe": null,
       "a_eps_years": [],
       "n_headlines": [
-        "SpaceX weighting in Nasdaq 100 set to more than double - Bloomberg",
-        "S&P 500, Dow Break Past Four-Day Loss To End Higher As Investors Eye Fed Meeting Next Week \u2014 DELL, HPE, EL, WMT In Focus",
-        "Sell the Nvidia Shares That Made Your Retirement or Ride Them Into It? These 3 ETFs Are the Middle Path",
-        "\u2018The Largest IPO Ever, Surpassing SpaceX\u2019: Anthropic Is Up Next",
-        "Exchange-Traded Funds, US Equities Rise After Midday",
-        "Marvell Rises 5% as Piper Sandler Starts Coverage With $270 Target; Broadcom Edges Higher, NVIDIA Holds Steady"
+        "History Says Buying the Nasdaq-100 at the Dot-Com Peak Still (Eventually) Turned $10,000 Into About $72,000",
+        "SpaceX Nasdaq 100 weight to jump to 2.82% in quarterly rebalance -Bloomberg",
+        "Dow Drops To Record Worst Week In Six Months Amid Elevated Yields, Oil \u2014 NVDA, TSLA, SPCX, ONON In Focus",
+        "QQQI\u2019s 14% Monthly Yield Masked $940 in Forgone Gains Per $10,000 Since Inception",
+        "Meta Platforms Just Ripped 23% in a Month: Take Profits, or Buy More?",
+        "Oracle Falls 3% While Cloud Rivals Hold Their Ground; Microsoft Dips, Amazon Nudges Higher"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:18.651311+00:00"
+      "fetched_at": "2026-09-20T08:09:36.286048+00:00"
     },
     "SMH": {
       "c_eps_growth": null,
@@ -1946,19 +1946,19 @@
       "a_roe": null,
       "a_eps_years": [],
       "n_headlines": [
-        "Sell the Nvidia Shares That Made Your Retirement or Ride Them Into It? These 3 ETFs Are the Middle Path",
-        "Easing Oil Bills, Tech Optimism Lift Wall Street Pre-Bell, Asia off, Europe Up",
-        "Forget SMH: The Chip Fund That Charges 0.15% Is Beating It by 22 Points This Year",
-        "Top Semiconductor ETFs That Investors May Buy in September",
-        "Oil, Bond Yields Cap Wall Street Pre-Bell; Asia, Europe Off",
-        "From Farmland to Fast Trading, ETFs Are Doing It All"
+        "Dow Drops To Record Worst Week In Six Months Amid Elevated Yields, Oil \u2014 NVDA, TSLA, SPCX, ONON In Focus",
+        "Why XLK\u2019s Next Rebalance Won\u2019t Fix Its Massive Concentration Problem",
+        "BofA Sees Global Chip Market Nearly Doubling: Semiconductor ETFs to Buy",
+        "Easing Oil Prices, Tech Rally Lift Wall Street Pre-Bell; Asia Up, Europe Off",
+        "S&P 500, Nasdaq, Dow End Higher As Drop In Oil Prices Allays Inflationary Concerns \u2014 NVDA, MCD, CRWV, LMT, AMZN In Focus",
+        "Easing Oil, Bond Yields Buoy Wall Street Pre-Bell; Asia Mixed, Europe Up"
       ],
       "n_catalyst": {
         "catalyst_type": "none",
         "summary": "Analysis failed.",
         "score": "none"
       },
-      "fetched_at": "2026-09-13T07:52:19.072121+00:00"
+      "fetched_at": "2026-09-20T08:09:36.775074+00:00"
     }
   }
 }
