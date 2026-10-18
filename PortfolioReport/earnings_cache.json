@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-11T09:32:38.599368+00:00",
+  "updated": "2026-10-18T07:37:30.572816+00:00",
   "data": {
     "COHU": {
       "c_eps_growth": 100.0,
@@ -44,7 +44,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:39.240537+00:00"
+      "fetched_at": "2026-10-18T07:37:31.145406+00:00"
     },
     "ONTO": {
       "c_eps_growth": 76.8,
@@ -89,7 +89,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:39.664261+00:00"
+      "fetched_at": "2026-10-18T07:37:31.694509+00:00"
     },
     "AMAT": {
       "c_eps_growth": 43.5,
@@ -134,7 +134,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:40.114440+00:00"
+      "fetched_at": "2026-10-18T07:37:32.267170+00:00"
     },
     "ICHR": {
       "c_eps_growth": 110.7,
@@ -179,7 +179,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:40.493426+00:00"
+      "fetched_at": "2026-10-18T07:37:32.661170+00:00"
     },
     "FORM": {
       "c_eps_growth": 500.0,
@@ -224,7 +224,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:41.045844+00:00"
+      "fetched_at": "2026-10-18T07:37:33.170421+00:00"
     },
     "MPWR": {
       "c_eps_growth": 87.8,
@@ -269,7 +269,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:41.439971+00:00"
+      "fetched_at": "2026-10-18T07:37:33.555593+00:00"
     },
     "FCFS": {
       "c_eps_growth": 59.2,
@@ -314,7 +314,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:41.915475+00:00"
+      "fetched_at": "2026-10-18T07:37:33.940012+00:00"
     },
     "AEIS": {
       "c_eps_growth": 168.2,
@@ -359,7 +359,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:42.410628+00:00"
+      "fetched_at": "2026-10-18T07:37:34.318687+00:00"
     },
     "BE": {
       "c_eps_growth": 477.8,
@@ -404,7 +404,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:42.816315+00:00"
+      "fetched_at": "2026-10-18T07:37:34.933955+00:00"
     },
     "DOCN": {
       "c_eps_growth": -17.1,
@@ -449,7 +449,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:43.376115+00:00"
+      "fetched_at": "2026-10-18T07:37:35.440975+00:00"
     },
     "FN": {
       "c_eps_growth": 59.4,
@@ -494,7 +494,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:43.972489+00:00"
+      "fetched_at": "2026-10-18T07:37:35.824072+00:00"
     },
     "TTMI": {
       "c_eps_growth": 95.1,
@@ -539,7 +539,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:44.348180+00:00"
+      "fetched_at": "2026-10-18T07:37:36.251321+00:00"
     },
     "BW": {
       "c_eps_growth": 111.1,
@@ -584,7 +584,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:44.813666+00:00"
+      "fetched_at": "2026-10-18T07:37:36.656956+00:00"
     },
     "AXTI": {
       "c_eps_growth": 212.5,
@@ -629,7 +629,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:45.284191+00:00"
+      "fetched_at": "2026-10-18T07:37:37.006739+00:00"
     },
     "TER": {
       "c_eps_growth": 387.8,
@@ -674,7 +674,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:45.734842+00:00"
+      "fetched_at": "2026-10-18T07:37:37.464423+00:00"
     },
     "AAOI": {
       "c_eps_growth": -75.0,
@@ -719,7 +719,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:46.209735+00:00"
+      "fetched_at": "2026-10-18T07:37:37.961586+00:00"
     },
     "GLW": {
       "c_eps_growth": 18.2,
@@ -764,7 +764,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:46.813553+00:00"
+      "fetched_at": "2026-10-18T07:37:38.389459+00:00"
     },
     "NXT": {
       "c_eps_growth": 3.8,
@@ -809,7 +809,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:47.310484+00:00"
+      "fetched_at": "2026-10-18T07:37:38.827068+00:00"
     },
     "LPTH": {
       "c_eps_growth": 62.5,
@@ -854,7 +854,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:47.782355+00:00"
+      "fetched_at": "2026-10-18T07:37:39.234873+00:00"
     },
     "MOD": {
       "c_eps_growth": 43.5,
@@ -899,7 +899,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:48.299179+00:00"
+      "fetched_at": "2026-10-18T07:37:39.654019+00:00"
     },
     "LXU": {
       "c_eps_growth": -325.0,
@@ -944,7 +944,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:48.711174+00:00"
+      "fetched_at": "2026-10-18T07:37:40.143101+00:00"
     },
     "AIP": {
       "c_eps_growth": -36.4,
@@ -989,7 +989,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:49.169485+00:00"
+      "fetched_at": "2026-10-18T07:37:40.490349+00:00"
     },
     "RCAT": {
       "c_eps_growth": -73.3,
@@ -1034,7 +1034,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:49.639370+00:00"
+      "fetched_at": "2026-10-18T07:37:40.978922+00:00"
     },
     "ASX": {
       "c_eps_growth": 175.9,
@@ -1079,7 +1079,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:50.156386+00:00"
+      "fetched_at": "2026-10-18T07:37:41.401652+00:00"
     },
     "AMPX": {
       "c_eps_growth": 50.0,
@@ -1124,7 +1124,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:50.687427+00:00"
+      "fetched_at": "2026-10-18T07:37:41.849848+00:00"
     },
     "LSCC": {
       "c_eps_growth": 600.0,
@@ -1169,7 +1169,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:51.193533+00:00"
+      "fetched_at": "2026-10-18T07:37:42.294055+00:00"
     },
     "ALM": {
       "c_eps_growth": 428.2,
@@ -1214,7 +1214,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:51.612749+00:00"
+      "fetched_at": "2026-10-18T07:37:42.645088+00:00"
     },
     "TGB": {
       "c_eps_growth": 166.7,
@@ -1259,7 +1259,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:52.138964+00:00"
+      "fetched_at": "2026-10-18T07:37:43.097907+00:00"
     },
     "ENS": {
       "c_eps_growth": 115.5,
@@ -1304,7 +1304,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:52.489322+00:00"
+      "fetched_at": "2026-10-18T07:37:43.581922+00:00"
     },
     "CRDO": {
       "c_eps_growth": 233.3,
@@ -1349,7 +1349,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:53.141901+00:00"
+      "fetched_at": "2026-10-18T07:37:44.031490+00:00"
     },
     "SITM": {
       "c_eps_growth": 182.1,
@@ -1394,7 +1394,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:53.633482+00:00"
+      "fetched_at": "2026-10-18T07:37:44.456010+00:00"
     },
     "GEV": {
       "c_eps_growth": 31.7,
@@ -1439,7 +1439,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:54.137290+00:00"
+      "fetched_at": "2026-10-18T07:37:44.916735+00:00"
     },
     "SIMO": {
       "c_eps_growth": 616.1,
@@ -1484,7 +1484,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:54.675116+00:00"
+      "fetched_at": "2026-10-18T07:37:45.382920+00:00"
     },
     "QUIK": {
       "c_eps_growth": 70.6,
@@ -1529,7 +1529,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:55.184788+00:00"
+      "fetched_at": "2026-10-18T07:37:45.871317+00:00"
     },
     "ALGM": {
       "c_eps_growth": 228.6,
@@ -1574,7 +1574,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:55.680862+00:00"
+      "fetched_at": "2026-10-18T07:37:46.315424+00:00"
     },
     "DIOD": {
       "c_eps_growth": 3.0,
@@ -1619,7 +1619,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:56.154855+00:00"
+      "fetched_at": "2026-10-18T07:37:46.856828+00:00"
     },
     "SPY": {
       "c_eps_growth": null,
@@ -1641,7 +1641,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:56.539133+00:00"
+      "fetched_at": "2026-10-18T07:37:47.223087+00:00"
     },
     "QQQ": {
       "c_eps_growth": null,
@@ -1663,7 +1663,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:56.907940+00:00"
+      "fetched_at": "2026-10-18T07:37:47.583668+00:00"
     },
     "SMH": {
       "c_eps_growth": null,
@@ -1685,7 +1685,7 @@
         "summary": "No news available.",
         "score": "none"
       },
-      "fetched_at": "2026-10-11T09:32:57.226051+00:00"
+      "fetched_at": "2026-10-18T07:37:47.895326+00:00"
     }
   }
 }
